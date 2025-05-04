@@ -1,0 +1,22 @@
+services:
+
+  db:
+    image: mysql
+    container_name: db_teste
+    environment:
+      - MYSQL_ROOT_PASSWORD=@Isac1998
+      - MYSQL_DATABASE=debug
+    ports:
+      - 3306:3306
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+    restart: always
+
+  manager:
+    image: adminer
+    container_name: manager_db
+    ports:
+      - 8050:8080
+    environment:
+      - ADMINER_DESIGN=pepa
+    restart: always
