@@ -1,11 +1,21 @@
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, requests, responses
-from services.api_service import ApiService
-from services.face_service import FaceService
 from services.login_service import LoginService
+from services.face_service import FaceService
+from services.api_service import ApiService
 
 api_tools = FaceService()
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],   
+    allow_headers=["*"],  
+)
+
 
 @app.post("/login")
 
