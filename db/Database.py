@@ -1,4 +1,4 @@
-from core.config import config
+from core.config.config import config
 from databases import Database as AsyncDatabase
 
 DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(

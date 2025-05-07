@@ -1,5 +1,5 @@
 import platform
-import os
+import subprocess
 
 class Ping:
     def __init__(self, ip: str):
@@ -9,11 +9,16 @@ class Ping:
         # Define o parâmetro correto baseado no sistema operacional
         param = "-n" if platform.system().lower() == "windows" else "-c"
         
-        # Redireciona a saída corretamente para cada SO
-        null = "nul" if platform.system().lower() == "windows" else "/dev/null"
+        # Monta o comando de ping de forma segura com subprocess
+        command = ["ping", param, "1", self.ip]
         
-        # Monta e executa o comando de ping
-        command = f"ping {param} 1 {self.ip} > {null} 2>&1"
-        response = os.system(command)
+        try:
+            # Executa o comando e aguarda a conclusão
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            # Verifica o código de retorno para determinar se o ping foi bem-sucedido
+            return result.returncode == 0
         
-        return response == 0
+        except Exception as e:
+            print(f"Erro ao tentar realizar o ping: {e}")
+            return False

@@ -1,25 +1,41 @@
+from services.face_service import FaceService
 from services.login_service import LoginService
 from services.api_service import ApiService
-from core.FaceUtils import FaceUtils
+from core.utils.FaceUtils import FaceUtils
 from core.Camera import Camera
-from core.config import config
+from core.config.config import config
 from db.Database import Database
 import asyncio
 
 db = Database()
+face_service = FaceService()
 
 async def debug():
     # DEBUG DO BANCO DE DADOS
     # Para testar o banco de dados, descomente o código abaixo e execute o arquivo
-    list_result = []
-    service = ApiService()
-    result = await service.get_table(columns=["nome", "email", "auth"],table="usuarios")
-    for i in result['result']:
-        list_result.append(dict(i))
+    data = {
+            "cpf": "111.111.111-00",
+            "matricula": "0000000",
+            "email":"discente@gmail.com",
+            "nome": "teste1",
+            "auth": "discente",
+        }
+      
+    try:
+        result = await face_service._validate_user(columns=["nome, email"], 
+                                               encoding_column="encodings",  
+                                               table="usuarios",
+                                               trust=60)
+        print(result)
     
-    print(list_result)
+    except Exception as e:
+        print(e)
+
+  
+    
+
 """ 
-  # DEBUG DA CÂMERA
+     # DEBUG DA CÂMERA
     # Para testar a câmera, descomente o código abaixo e execute o arquivo
 
 camera_info = {
