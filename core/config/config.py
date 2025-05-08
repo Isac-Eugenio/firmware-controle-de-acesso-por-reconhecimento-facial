@@ -19,7 +19,7 @@ config = {
     
     "details":{
          "camera": {
-             "resolution":"1600x1200",
+             "resolution":"800x600",
              "format":"JPG"
          }
     },

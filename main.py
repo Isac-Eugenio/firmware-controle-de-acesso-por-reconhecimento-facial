@@ -1,11 +1,10 @@
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, requests, responses
+from fastapi import FastAPI, requests, responses, websockets
 from services.login_service import LoginService
 from services.face_service import FaceService
 from services.api_service import ApiService
 
 api_tools = FaceService()
-
 app = FastAPI()
 
 app.add_middleware(
@@ -60,24 +59,22 @@ async def table_perfil(request: requests.Request):
     )
 
    
+# Area de testes via rede:
+
 @app.get("/debug")
 async def debug():
-    try:
-        face = api_tools._extract_valid_face_encoding()  # Chama o serviço para extrair a face
-        if face:
-            return responses.JSONResponse(
-                content={"message": "Debug bem-sucedido", "data": face},
-                status_code=200
-            )
-        else:
-            return responses.JSONResponse(
-                content={"error": "Nenhuma face válida encontrada", "data": []},
-                status_code=404
-            )
-    except Exception as e:
-        print(f"Erro durante o debug: {e}")
-        return responses.JSONResponse(
-            content={"error": f"Erro ao processar: {str(e)}", "data": []},
-            status_code=500  # Código de status adequado para erro interno do servidor
-        )
+    async def event_generator():
+        try:
+            async for step in api_tools._validate_user(
+                columns=["nome", "email", "alias"],
+                encoding_column="encodings",  
+                table="usuarios",
+                trust=60
+            ):
+                yield f"data: {step['message']}\n\n"
+        except Exception as e:
+            yield f"data: Erro ao processar: {str(e)}\n\n"
+
+    return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
+
 

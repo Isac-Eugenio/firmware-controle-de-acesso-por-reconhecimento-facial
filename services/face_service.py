@@ -33,15 +33,24 @@ class FaceService:
             self._update_camera()
             result = self.fr.encodings()
 
-            if not result["status"]:
-                raise FaceServiceError("Falha ao obter encodings de face", result)
+            # pega só o vetor de encodings
+            encodings = result.get("encodings", [])
 
-            encodings = result["encodings"]
+            # valida se veio ao menos um
+            if not encodings:
+                raise FaceServiceError("Nenhum rosto detectado", result)
+
+            # retorna o primeiro encoding convertido para lista
             return {"status": True, "encoding": encodings[0].tolist()}
 
+        except FaceServiceError:
+            # reaproveita erros intencionais
+            raise
         except Exception as e:
+            # outros erros
             raise FaceServiceError("Erro ao extrair encoding da face", str(e))
-    
+
+        
     async def _get_data(self, data: dict, table: str):
         try:
             await self.db._ensure_connected()
@@ -64,7 +73,7 @@ class FaceService:
         try:
             # Etapa 1: Inicialização da câmera
             self._update_camera()
-            yield {"id": "01", "message": "Cam iniciada", "status": True, "final": False}
+            yield {"id": "01", "message": "Cam iniciada", "status": True, "final": False, "start": True}
 
             # Etapa 2: Captura facial
             result = self.fr.encodings()
@@ -173,7 +182,6 @@ class FaceService:
             }
 
         except Exception as e:
-            print(str(e))
             yield {
                 "id": "06",
                 "message": "Erro no cadastro",
@@ -185,53 +193,91 @@ class FaceService:
     
     async def update_user(self, data: dict, encoding_column: str, table: str):
         try:
-            encoding = self._extract_valid_face_encoding()
+            # Etapa 1: iniciar câmera
+            yield {"id": "01", "message": "Iniciando câmera", "status": True, "final": False}
 
-            if not encoding["status"]:
-                raise FaceServiceError("Erro ao extrair o encoding da face", encoding)
-            
-            encoding = ","
-            data[encoding_column] = str(encoding["encoding"])
+            # Etapa 2: capturar rosto
+            yield {"id": "02", "message": "Capturando rosto...", "status": True, "final": False}
+            face_data = self._extract_valid_face_encoding()
+            if not face_data["status"]:
+                yield {"id": "02", "message": "Nenhum rosto", "status": False, "final": True}
+                return
+            yield {"id": "02", "message": "Rosto capturado", "status": True, "final": False}
 
-            condition = " AND ".join([f"{key} = '{value}'" for key, value in data.items()])
+            # Etapa 3: preparar dados
+            yield {"id": "03", "message": "Preparando...", "status": True, "final": False}
+            encoding = ",".join(str(x) for x in face_data["encoding"])
+            data[encoding_column] = encoding
+            condition = " AND ".join([f"{k} = '{v}'" for k, v in data.items()])
 
+            # Etapa 4: atualizar usuário
+            yield {"id": "04", "message": "Atualizando...", "status": True, "final": False}
             await self.db._ensure_connected()
             result = await self.db.update(table=table, data=data, condition=condition)
 
             if not result["status"]:
-                raise FaceServiceError("Erro ao atualizar o banco de dados", result)
-            
+                yield {"id": "04", "message": "Falha atualização", "status": False, "final": True}
+                return
+
             if not result["result"]:
-                raise FaceServiceError("Nenhum dado encontrado", result)
-            
-            return {
-                "status": result["status"],
-                "message": "Usuário atualizado com sucesso" if result["status"] else "Erro ao atualizar usuario",
-                "data": result
+                yield {"id": "04", "message": "Nada alterado", "status": False, "final": True}
+                return
+
+            # Etapa 5: sucesso
+            yield {
+                "id": "05",
+                "message": "Atualização concluída",
+                "status": True,
+                "data": result,
+                "final": True
             }
-        
+
         except Exception as e:
-            raise FaceServiceError("Erro ao atualizar o usuário", str(e))
-    
+            yield {
+                "id": "06",
+                "message": "Erro ao atualizar",
+                "status": False,
+                "data": str(e),
+                "final": True
+            }
+
+
     async def delete_user(self, data: dict, table: str):
         try:
+            # Etapa 1: iniciar exclusão
+            yield {"id": "01", "message": "Iniciando...", "status": True, "final": False}
+
+            # Etapa 2: excluir usuário
+            yield {"id": "02", "message": "Excluindo...", "status": True, "final": False}
             await self.db._ensure_connected()
             result = await self.db.delete(table=table, data=data)
 
             if not result["status"]:
-                raise FaceServiceError("Erro ao deletar o banco de dados", result)
-            
-            if not result["result"]:
-                raise FaceServiceError("Nenhum dado encontrado", result)
+                yield {"id": "02", "message": "Falha exclusão", "status": False, "final": True}
+                return
 
-            return {
-                "status": result["status"],
-                "message": "Usuário deletado com sucesso" if result["status"] else "Erro ao deletar usuario",
-                "data": result
+            if not result["result"]:
+                yield {"id": "02", "message": "Nada excluído", "status": False, "final": True}
+                return
+
+            # Etapa 3: sucesso
+            yield {
+                "id": "03",
+                "message": "Exclusão concluída",
+                "status": True,
+                "data": result,
+                "final": True
             }
 
         except Exception as e:
-            raise FaceServiceError("Erro ao deletar o usuário", str(e))
+            yield {
+                "id": "04",
+                "message": "Erro ao excluir",
+                "status": False,
+                "data": str(e),
+                "final": True
+            }
+
 
     async def search(self, data: dict, table: str):
         return await self._get_data(data=data, table=table)

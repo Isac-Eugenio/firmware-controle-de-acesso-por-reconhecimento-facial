@@ -10,6 +10,10 @@ import asyncio
 db = Database()
 face_service = FaceService()
 
+_camera = Camera(config["hosts"]["camera"], config["ports"]["camera"])
+_frame = _camera.get_frame(config["details"]["camera"]["resolution"], 
+                                config["details"]["camera"]["format"])
+
 async def debug():
     # DEBUG DO BANCO DE DADOS
     # Para testar o banco de dados, descomente o código abaixo e execute o arquivo
@@ -23,23 +27,21 @@ async def debug():
         }
       
     try:
-        """ async for step in face_service._validate_user(columns=["nome, email", "alias"], 
+        async for step in face_service._validate_user(columns=["nome, email", "alias"], 
                                                encoding_column="encodings",  
                                                table="usuarios",
                                                trust=60):
             if not step["final"]:
                 print("Processando:", step["message"])
             else:
-                print("Finalizado:", step["message"]) """
+                print("Finalizado:", step["message"]) 
             
         """ async for steps in face_service.insert_user(data=data, encoding_column="encodings", table="usuarios"):
             if not steps["final"]:
                 print("Processando:", steps["message"])
             else:
-                print("Finalizado:", steps["message"]) """
+                print("Finalizado:", steps["message"])  """
         
-        result = await face_service._extract_valid_face_encoding()
-
     except Exception as e:
         print(e)
 
