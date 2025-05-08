@@ -15,6 +15,7 @@ async def debug():
     # Para testar o banco de dados, descomente o código abaixo e execute o arquivo
     data = {
             "cpf": "111.111.111-00",
+            "alias":"Isac",
             "matricula": "0000000",
             "email":"discente@gmail.com",
             "nome": "teste1",
@@ -22,12 +23,23 @@ async def debug():
         }
       
     try:
-        result = await face_service._validate_user(columns=["nome, email"], 
+        """ async for step in face_service._validate_user(columns=["nome, email", "alias"], 
                                                encoding_column="encodings",  
                                                table="usuarios",
-                                               trust=60)
-        print(result)
-    
+                                               trust=60):
+            if not step["final"]:
+                print("Processando:", step["message"])
+            else:
+                print("Finalizado:", step["message"]) """
+            
+        """ async for steps in face_service.insert_user(data=data, encoding_column="encodings", table="usuarios"):
+            if not steps["final"]:
+                print("Processando:", steps["message"])
+            else:
+                print("Finalizado:", steps["message"]) """
+        
+        result = await face_service._extract_valid_face_encoding()
+
     except Exception as e:
         print(e)
 

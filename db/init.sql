@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS `dispositivos` (
 
 CREATE TABLE IF NOT EXISTS `usuarios` (
     `cpf` VARCHAR(14) NOT NULL UNIQUE CHECK (`cpf` REGEXP '^[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}$'),
-    `nome` VARCHAR(100) NOT NULL,  
+    `nome` VARCHAR(100) NOT NULL,
+    `alias` VARCHAR(11) NOT NULL,
     `email` VARCHAR(255) UNIQUE NOT NULL CHECK (email REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),  
     `matricula` VARCHAR(255),
     `senha` VARCHAR(255),  -- Pode ser NULL para 'discente'
@@ -20,7 +21,8 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
 
 CREATE TABLE IF NOT EXISTS `historico` (
     `cpf` VARCHAR(14) NOT NULL,
-    `nome` VARCHAR(100) NOT NULL,  
+    `nome` VARCHAR(100) NOT NULL,
+    `alias` VARCHAR(11) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `matricula` VARCHAR(255),
     `auth` ENUM('discente', 'docente') NOT NULL DEFAULT 'discente',  
@@ -71,14 +73,14 @@ END;
 DELIMITER ;
 
 -- Inserir um usuário root (se ainda não existir)
-INSERT INTO usuarios (cpf, nome, email, matricula, senha, auth, encodings) 
-VALUES ('000.000.000-00', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'docente', '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0');
+INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, auth, encodings) 
+VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'docente', '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0');
 
 -- Inserir um dispositivo de teste (se ainda não existir)
 INSERT INTO dispositivos (mac, esp_id, local)
 VALUES ('00:14:22:01:23:45', 'ESP32-123456', 'Laboratorio 1');
 
 -- Inserir um registro no histórico (se ainda não existir)
-INSERT INTO historico (cpf, nome, email, matricula, auth, mac, ip, local, esp_id, trust, data_acesso, horario_acesso) 
-VALUES ('000.000.000-00', 'root', 'root.debug@gmail.com', '123456', 'docente', 
+INSERT INTO historico (cpf, nome, alias, email, matricula, auth, mac, ip, local, esp_id, trust, data_acesso, horario_acesso) 
+VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', 'docente', 
         '00:14:22:01:23:45', '192.168.0.1', 'Laboratorio 1', 'ESP32-123456', 100, CURRENT_DATE, CURRENT_TIME);

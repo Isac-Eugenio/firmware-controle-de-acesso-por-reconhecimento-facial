@@ -57,67 +57,32 @@ class FaceService:
         
         except Exception as e:
             raise FaceServiceError("Erro ao buscar dados", str(e))
-    
-    """ 
-    TODO: Manutenção
-
-    async def _validate_user(self, data: dict, table: str, encoding_column: str, trust: int):
-        try:
-            # Atualizar a câmera e obter os encodings da face
-            self._update_camera()
-            result = self.fr.encodings()
-
-            if not result["status"]:
-                raise FaceServiceError("Falha ao obter encodings de face", result)
-
-            encodings = result["encodings"]
-            encodings = np.array(eval(encodings))  # Converte para np.array para comparação
-            
-            # Garantir que o banco de dados esteja conectado
-            await self.db._ensure_connected()
-
-            # Consulta inicial no banco de dados
-            db_result = await self.db.select(table=table, data=data)
-            
-            if not db_result["status"]:
-                raise FaceServiceError("Erro ao consultar o banco de dados", db_result)
-
-            if not db_result["result"]:
-                raise FaceServiceError("Nenhum dado encontrado", db_result)
-
-            # Iterar sobre os resultados do banco de dados
-            for user in db_result["result"]:
-                db_encoding = user.get(encoding_column)
-                if db_encoding:
-                    db_encoding = np.array(eval(db_encoding))  # Converte o encoding armazenado para np.array
-                    
-                    # Comparar os encodings da face com o encoding do banco de dados
-                    results = self.fr.compare_faces([db_encoding], encodings, trust=trust)
-                    
-                    if results[0]:  # Se encontrar uma correspondência
-                        return {"status": True, "message": "Usuário encontrado", "data": user}
-
-            raise FaceServiceError("Nenhum usuário correspondente encontrado", None)
-        
-        except Exception as e:
-            raise FaceServiceError("Erro ao validar o usuário", str(e))
- """
 
     async def _validate_user(self, columns: list, table: str, encoding_column: str, trust: int):
         columns.append(encoding_column)
 
         try:
+            # Etapa 1: Inicialização da câmera
             self._update_camera()
+            yield {"id": "01", "message": "Cam iniciada", "status": True, "final": False}
+
+            # Etapa 2: Captura facial
             result = self.fr.encodings()
+            face_encodings = result["encodings"]
+            if not face_encodings:
+                yield {"id": "02", "message": "Sem rosto", "status": False, "final": True}
+                return
+            yield {"id": "02", "message": "Rosto lido", "status": True, "final": False}
 
-            face_encodings = result["encodings"]  # Certifique-se de acessar os encodings corretamente
-
+            # Etapa 3: Verificação
             await self.db._ensure_connected()
             db_result = await self.db.select(table=table, columns=columns)
-
             if not db_result["status"] or not db_result["result"]:
-                raise FaceServiceError("Erro ao consultar o banco de dados ou nenhum dado encontrado", db_result)
+                yield {"id": "03", "message": "Acesso negado", "status": False, "final": True}
+                return
+            yield {"id": "03", "message": "Verificando...", "status": True, "final": False}
 
+            # Etapa 4: Comparação facial
             best_match = None
             best_distance = float('inf')
 
@@ -138,44 +103,84 @@ class FaceService:
                             best_match = user
 
             if best_match:
-                best_match = dict(best_match)  # Converte Record em dict
-                best_match.pop(encoding_column, None)  # Remove coluna de encoding
-
-                return {
+                best_match = dict(best_match)
+                best_match.pop(encoding_column, None)
+                yield {
+                    "id": "04",
+                    "message": f"Ola! {best_match['alias']}",
                     "status": True,
-                    "message": "Usuário encontrado",
-                    "data": best_match
+                    "data": best_match,
+                    "final": True
+                }
+            else:
+                yield {
+                    "id": "04",
+                    "message": "Acesso negado",
+                    "status": False,
+                    "data": None,
+                    "final": True
                 }
 
-            raise FaceServiceError("Nenhum usuário correspondente encontrado", None)
-
         except Exception as e:
-            raise FaceServiceError("Erro ao validar o usuário", str(e))
+            yield {
+                "id": "05",
+                "message": "Erro ao ler",
+                "status": False,
+                "data": str(e),
+                "final": True
+            }
+
 
 
     async def insert_user(self, data: dict, encoding_column: str, table: str):
         try:
+            # Etapa 1: início do cadastro
+            yield {"id": "01", "message": "Iniciando cadastro", "status": True, "final": False}
+
+            # Etapa 2: captura facial
+            yield {"id": "02", "message": "Capturando rosto...", "status": True, "final": False}
             face_data = self._extract_valid_face_encoding()
 
             if not face_data["status"]:
-                raise FaceServiceError("Erro ao extrair o encoding da face", face_data)
+                yield {"id": "02", "message": "Nenhum rosto detectado", "status": False, "final": True}
+                return
+            yield {"id": "02", "message": "Rosto capturado", "status": True, "final": False}
+
+            # Etapa 3: preparando dados
+            yield {"id": "03", "message": "Preparando cadastro...", "status": True, "final": False}
             encoding = ",".join(str(x) for x in face_data["encoding"])
+
             data[encoding_column] = encoding
-            
+
+            # Etapa 4: envio ao servidor
+            yield {"id": "04", "message": "Enviando dados...", "status": True, "final": False}
+
             await self.db._ensure_connected()
+            
             result = await self.db.insert(table=table, data=data)
 
             if not result["status"]:
-                raise FaceServiceError("Erro ao cadastrar o usuário", result)
+                yield {"id": "04", "message": "Falha no cadastro", "status": False, "final": True}
+                return
 
-            return {
-                "status": result["status"],
+            # Etapa 5: sucesso
+            yield {
+                "id": "05",
                 "message": "Usuário cadastrado com sucesso",
-                "data": result
+                "status": True,
+                "data": result,
+                "final": True
             }
 
         except Exception as e:
-            raise FaceServiceError("Erro ao inserir o usuário", str(e))
+            print(str(e))
+            yield {
+                "id": "06",
+                "message": "Erro no cadastro",
+                "status": False,
+                "data": str(e),
+                "final": True
+            }
 
     
     async def update_user(self, data: dict, encoding_column: str, table: str):
