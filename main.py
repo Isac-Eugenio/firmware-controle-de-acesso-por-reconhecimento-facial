@@ -3,6 +3,7 @@ from fastapi import FastAPI, requests, responses, websockets
 from services.login_service import LoginService
 from services.face_service import FaceService
 from services.api_service import ApiService
+import json
 
 api_tools = FaceService()
 app = FastAPI()
@@ -58,7 +59,34 @@ async def table_perfil(request: requests.Request):
         status_code=400  # Código de status adequado para falha na leitura da tabela
     )
 
-   
+
+@app.post('/auth_entrada')
+async def verificar_entrada(request: requests.Request):
+    async def event_generator():
+        try:
+            async for step in api_tools._validate_user(
+                columns=["nome", "email", "alias"],
+                encoding_column="encodings",  
+                table="usuarios",
+                trust=60
+            ):
+                if not step["final"]:
+                    yield f"data: {step['message']}\n\n"
+                    
+                else:
+                    if "data" in step and step["data"]:
+                        yield json.dumps(step["data"])
+                    else:
+                        yield json.dumps(step["message"])
+
+                
+        except Exception as e:
+            yield f"data: Erro ao processar: {str(e)}\n\n"
+    
+    return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+
 # Area de testes via rede:
 
 @app.get("/debug")
