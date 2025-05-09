@@ -100,11 +100,27 @@ class Database:
 
     async def insert(self, table: str, data: dict):
         await self._ensure_connected()
+
+        # Gerar as colunas a partir das chaves do dicionário 'data'
         columns = ", ".join(data.keys())
-        values = ", ".join([f"= {value}" for value in data.values()])
-        query = f"INSERT INTO {table} ({columns}) VALUES ({values})"
 
-        result = await self._execute_query(query=query, values=data)
+        # Criar os placeholders nomeados (usando :coluna)
+        placeholders = ", ".join([f":{key}" for key in data.keys()])
+
+        # Construção da query
+        query = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
+
+        # Passar o dicionário de dados como valores para os placeholders
+        values = data
+
+        try:
+            # Executando a consulta passando os dados como parâmetros
+            result = await self._execute_query(query=query, values=values)
+        except Exception as e:
+            # Em caso de erro, capturar e exibir o erro
+            print(f"Erro ao executar a query: {e}")
+            result = None
+
         await self._disconnect()
 
         return {
@@ -114,20 +130,6 @@ class Database:
             "query": query
         }
 
-    async def update(self, table: str, data: dict, condition: str):
-        await self._ensure_connected()
-        set_clause = ", ".join([f"{key} = :{key}" for key in data.keys()])
-        query = f"UPDATE {table} SET {set_clause} WHERE {condition}"
-
-        result = await self._execute_query(query=query, values=data)
-        await self._disconnect()
-
-        return {
-            "log": self.isconnected,
-            "result": result,
-            "status": self.isquery(result),
-            "query": query
-        }
 
     async def delete(self, table: str, condition: str):
         await self._ensure_connected()

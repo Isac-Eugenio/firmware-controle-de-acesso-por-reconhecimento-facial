@@ -69,7 +69,7 @@ DELIMITER ;
 
 -- Inserir usuário admin root (com ID manual)
 INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, auth, encodings, id) 
-VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'admin', '...', '00000001');
+VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'admin', '0,0,0,0', '00000001');
 
 -- Dispositivo de teste
 INSERT INTO dispositivos (mac, local)

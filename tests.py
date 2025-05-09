@@ -14,32 +14,39 @@ _camera = Camera(config["hosts"]["camera"], config["ports"]["camera"])
 _frame = _camera.get_frame(config["details"]["camera"]["resolution"], 
                                 config["details"]["camera"]["format"])
 
+
+
 async def debug():
     # DEBUG DO BANCO DE DADOS
     # Para testar o banco de dados, descomente o código abaixo e execute o arquivo
     user = {
-            "cpf": "000.000.000-01",
-            "alias":"Isac",
-            "matricula": "0000000",
-            "email":"discente@gmail.com",
-            "nome": "teste1",
-            "auth": "discente",
-            "encodings": "1,0,0,0,0,0"
-        } 
-    admin = {
-        "id" : '80679543'
+        "cpf": "010.100.000-01",  # Limpeza de espaços no CPF
+        "alias": "Isac",
+        "matricula": "0000000",
+        "email": "discente@gmail.com",
+        "nome": "teste1",
+        "auth": "discente",  # Valor para a coluna auth que está no banco (enum 'discente', 'docente', 'admin')
+        "encodings": "1,0,0,0,0,0"  # Dados codificados, caso necessário
     }
-    data = {
-        "admin_data":admin,
-        "user_data":user
-    }
-    
-    try:
-        get = await api.insert_user_api(form=data)
-        print(get)
 
+    admin = {
+        "id": '00000001',
+        "email": "root.debug@gmail.com"
+    }
+
+    data = {
+        "admin_data": admin,
+        "user_data": user
+    }
+
+    try:
+        # Tenta executar a função de inserção
+        get = await api.insert_user_api(form=data)
+        print("Resultado da inserção:", get)
+    
     except Exception as e:
-        print(e)
+        # Em caso de erro, imprime a exceção
+        print(f"Erro durante a inserção: {e}")
 
   
     

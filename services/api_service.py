@@ -1,5 +1,4 @@
 from db.Database import Database
-import datetime
 import random 
 
 class ApiService:
@@ -7,11 +6,12 @@ class ApiService:
         self.database = Database()
         pass
 
-    def generate_id():
-        timestamp = datetime.now().strftime('%d%m%H%M%S')  # ex: 0905123059
-        random_number = random.randint(10, 99)
-        return timestamp + str(random_number)
+    def _generate_id(self):
+         return str(random.randint(0, 99999999)).zfill(8)
     
+    def _ensure_str_values(self, data: dict):
+        return {key: f"'{value}'" for key, value in data.items()}
+
     async def get_table(self, columns:list = None, table:str=None):
         if not columns is None: 
             get = await self.database.select(columns=columns, table=table)
@@ -23,7 +23,13 @@ class ApiService:
     async def insert_user_api(self, form: dict):
         data_admin = form.get('admin_data')  # Obtendo os dados do admin
         user_admin = form.get('user_data')   # Obtendo os dados do novo usuário
+
+        user_admin = dict(user_admin)
+        user_admin['id'] = self._generate_id()
         
+        # Garantindo que todos os valores em user_admin sejam strings
+       # user_admin = self._ensure_str_values(user_admin)
+
         try:
             # Verificando se os dados do admin estão presentes
             if data_admin is None:
@@ -34,7 +40,8 @@ class ApiService:
                 raise Exception("Sem dados do novo usuário!")
             
             # Construindo a condição WHERE dinamicamente com base nas chaves e valores do admin_data
-            condition = " AND ".join([f"{key} = :{key}" for key in data_admin.keys()])
+            condition = " AND ".join([f"{key} = '{value}'" for key, value in dict(data_admin).items()])
+            print(f"SELECT COUNT(*) FROM usuarios WHERE {condition}")
             
             # Verificando se o admin existe no banco de dados
             admin_check = await self.database.count(
@@ -61,4 +68,5 @@ class ApiService:
         except Exception as e:
             # Retorna o erro se algo deu errado
             return str(e)
+
 
