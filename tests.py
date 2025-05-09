@@ -9,7 +9,7 @@ import asyncio
 
 db = Database()
 face_service = FaceService()
-
+api = ApiService()
 _camera = Camera(config["hosts"]["camera"], config["ports"]["camera"])
 _frame = _camera.get_frame(config["details"]["camera"]["resolution"], 
                                 config["details"]["camera"]["format"])
@@ -17,25 +17,19 @@ _frame = _camera.get_frame(config["details"]["camera"]["resolution"],
 async def debug():
     # DEBUG DO BANCO DE DADOS
     # Para testar o banco de dados, descomente o código abaixo e execute o arquivo
-    data = {
+    """  data = {
             "cpf": "111.111.111-00",
             "alias":"Isac",
             "matricula": "0000000",
             "email":"discente@gmail.com",
             "nome": "teste1",
             "auth": "discente",
-        }
-      
+            ""
+        } """
+    
+    data = {"admin_data": {"id": "0000", "auth": "admin"}}
     try:
-        async for step in face_service._validate_user(columns=["nome, email", "alias"], 
-                                               encoding_column="encodings",  
-                                               table="usuarios",
-                                               trust=60):
-            if not step["final"]:
-                print("Processando:", step["message"])
-            else:
-                print("Finalizado:", step["message"]) 
-            
+        get = await api.insert_user_api(form=data)
         """ async for steps in face_service.insert_user(data=data, encoding_column="encodings", table="usuarios"):
             if not steps["final"]:
                 print("Processando:", steps["message"])

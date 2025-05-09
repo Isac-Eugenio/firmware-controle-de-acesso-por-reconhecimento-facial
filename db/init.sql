@@ -1,9 +1,7 @@
 CREATE TABLE IF NOT EXISTS `dispositivos` (
     `mac` VARCHAR(20) NOT NULL, 
-    `esp_id` VARCHAR(20) NOT NULL, 
     `local` VARCHAR(255) NOT NULL,
     PRIMARY KEY (`mac`),
-    UNIQUE KEY `esp_id` (`esp_id`),
     UNIQUE KEY `local` (`local`)
 ) ENGINE = InnoDB;
 
@@ -21,26 +19,25 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS `historico` (
-    `cpf` VARCHAR(14) NOT NULL,
     `nome` VARCHAR(100) NOT NULL,
     `alias` VARCHAR(11) NOT NULL,
+    `id` CHAR(8), 
+    `cpf` VARCHAR(14) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `matricula` VARCHAR(255),
     `auth` ENUM('discente', 'docente', 'admin') NOT NULL DEFAULT 'discente',  
     `mac` VARCHAR(20) DEFAULT NULL,  
     `ip` VARCHAR(15) NOT NULL,  
     `local` VARCHAR(100) DEFAULT NULL,  
-    `esp_id` VARCHAR(30) DEFAULT NULL,  
     `trust` INT NOT NULL CHECK (`trust` BETWEEN 0 AND 100),  
     `data_acesso` DATE,  
     `horario_acesso` TIME, 
-    `id` CHAR(8),
     `log` TEXT DEFAULT NULL,
-    KEY `esp_id` (`esp_id`),
+    KEY `mac` (`mac`),
     KEY `local` (`local`),
     KEY `email` (`email`),
     KEY `cpf` (`cpf`),
-    CONSTRAINT `historico_ibfk_1` FOREIGN KEY (`esp_id`) REFERENCES `dispositivos` (`esp_id`) ON DELETE SET NULL,
+    CONSTRAINT `historico_ibfk_1` FOREIGN KEY (`mac`) REFERENCES `dispositivos` (`mac`) ON DELETE SET NULL,
     CONSTRAINT `historico_ibfk_2` FOREIGN KEY (`local`) REFERENCES `dispositivos` (`local`) ON DELETE SET NULL,
     CONSTRAINT `historico_ibfk_3` FOREIGN KEY (`id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE,
     CONSTRAINT `historico_ibfk_4` FOREIGN KEY (`email`) REFERENCES `usuarios` (`email`) ON DELETE CASCADE,
@@ -103,10 +100,10 @@ INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, auth, encodings
 VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'admin', '...');
 
 -- Dispositivo de teste
-INSERT INTO dispositivos (mac, esp_id, local)
-VALUES ('00:14:22:01:23:45', 'ESP32-123456', 'Laboratorio 1');
+INSERT INTO dispositivos (mac, local)
+VALUES ('00:14:22:01:23:45', 'Laboratorio 1');
 
 -- Registro no histórico
-INSERT INTO historico (cpf, nome, alias, email, matricula, auth, mac, ip, local, esp_id, trust, data_acesso, horario_acesso, id, log) 
-SELECT cpf, nome, alias, email, matricula, auth, '00:14:22:01:23:45', '192.168.0.1', 'Laboratorio 1', 'ESP32-123456', 100, CURRENT_DATE, CURRENT_TIME, id, 'Apenas para debug esta row !' 
+INSERT INTO historico (cpf, nome, alias, email, matricula, auth, mac, ip, local, trust, data_acesso, horario_acesso, id, log) 
+SELECT cpf, nome, alias, email, matricula, auth, '00:14:22:01:23:45', '192.168.0.1', 'Laboratorio 1', 100, CURRENT_DATE, CURRENT_TIME, id, 'Apenas para debug esta row !' 
 FROM usuarios WHERE cpf = '000.000.000-00';
