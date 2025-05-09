@@ -17,25 +17,27 @@ _frame = _camera.get_frame(config["details"]["camera"]["resolution"],
 async def debug():
     # DEBUG DO BANCO DE DADOS
     # Para testar o banco de dados, descomente o código abaixo e execute o arquivo
-    """  data = {
-            "cpf": "111.111.111-00",
+    user = {
+            "cpf": "000.000.000-01",
             "alias":"Isac",
             "matricula": "0000000",
             "email":"discente@gmail.com",
             "nome": "teste1",
             "auth": "discente",
-            ""
-        } """
+            "encodings": "1,0,0,0,0,0"
+        } 
+    admin = {
+        "id" : '80679543'
+    }
+    data = {
+        "admin_data":admin,
+        "user_data":user
+    }
     
-    data = {"admin_data": {"id": "0000", "auth": "admin"}}
     try:
         get = await api.insert_user_api(form=data)
-        """ async for steps in face_service.insert_user(data=data, encoding_column="encodings", table="usuarios"):
-            if not steps["final"]:
-                print("Processando:", steps["message"])
-            else:
-                print("Finalizado:", steps["message"])  """
-        
+        print(get)
+
     except Exception as e:
         print(e)
 

@@ -101,7 +101,7 @@ class Database:
     async def insert(self, table: str, data: dict):
         await self._ensure_connected()
         columns = ", ".join(data.keys())
-        values = ", ".join([f":{key}" for key in data.keys()])
+        values = ", ".join([f"= {value}" for value in data.values()])
         query = f"INSERT INTO {table} ({columns}) VALUES ({values})"
 
         result = await self._execute_query(query=query, values=data)
@@ -145,7 +145,7 @@ class Database:
 
     async def count(self, table: str, condition=None):
         await self._ensure_connected()
-        query = f"SELECT COUNT(*) FROM {table}"
+        query = f"SELECT COUNT(*) as result FROM {table}"
         if condition:
             query += f" WHERE {condition}"
 

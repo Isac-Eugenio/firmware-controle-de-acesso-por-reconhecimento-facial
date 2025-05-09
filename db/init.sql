@@ -46,34 +46,6 @@ CREATE TABLE IF NOT EXISTS `historico` (
     )
 ) ENGINE = InnoDB;
 
-
--- Gatilho de inserção com verificação de senha
-DELIMITER //
-CREATE TRIGGER before_insert_usuarios
-BEFORE INSERT ON usuarios
-FOR EACH ROW
-BEGIN
-    IF NEW.auth = 'admin' THEN
-        IF NEW.senha IS NULL OR NEW.senha = '' THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Usuários com auth = admin devem ter uma senha.';
-        END IF;
-    ELSE
-        IF NEW.senha IS NOT NULL AND NEW.senha <> '' THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Apenas usuários admin podem ter senha.';
-        END IF;
-    END IF;
-
-    -- Gerar ID único de 8 dígitos
-    SET NEW.id = LPAD(FLOOR(RAND() * 100000000), 8, '0');
-    WHILE EXISTS (SELECT 1 FROM usuarios WHERE id = NEW.id) DO
-        SET NEW.id = LPAD(FLOOR(RAND() * 100000000), 8, '0');
-    END WHILE;
-END;
-//
-DELIMITER ;
-
 -- Gatilho de atualização com verificação de senha
 DELIMITER //
 CREATE TRIGGER before_update_usuarios
@@ -95,9 +67,9 @@ END;
 //
 DELIMITER ;
 
--- Inserir usuário admin root
-INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, auth, encodings) 
-VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'admin', '...');
+-- Inserir usuário admin root (com ID manual)
+INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, auth, encodings, id) 
+VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'admin', '...', '00000001');
 
 -- Dispositivo de teste
 INSERT INTO dispositivos (mac, local)
