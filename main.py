@@ -20,7 +20,6 @@ app.add_middleware(
 async def login(request: requests.Request):
     formulario = await request.json()
     service = LoginService(form=formulario)
-    print(f'Request: {formulario}')
 
     result = await service.login()
 
@@ -85,7 +84,9 @@ async def verificar_entrada(request: requests.Request):
     
     return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
 
-
+@app.post('/novo_usuario')
+async def novo_usuario(request: requests.Request):
+    pass
 
 # Area de testes via rede:
 

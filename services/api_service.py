@@ -12,3 +12,6 @@ class ApiService:
             get = await self.database.select(table=table)
             return get
     
+    async def insert_user_api(self, form: dict):
+        columns = [keys for keys in form['admin'].keys]
+        get = await self.database.select(columns=columns, table="usuarios")
