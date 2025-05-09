@@ -107,6 +107,6 @@ INSERT INTO dispositivos (mac, esp_id, local)
 VALUES ('00:14:22:01:23:45', 'ESP32-123456', 'Laboratorio 1');
 
 -- Registro no histórico
-INSERT INTO historico (cpf, nome, alias, email, matricula, auth, mac, ip, local, esp_id, trust, data_acesso, horario_acesso, id) 
-SELECT cpf, nome, alias, email, matricula, auth, '00:14:22:01:23:45', '192.168.0.1', 'Laboratorio 1', 'ESP32-123456', 100, CURRENT_DATE, CURRENT_TIME, id
+INSERT INTO historico (cpf, nome, alias, email, matricula, auth, mac, ip, local, esp_id, trust, data_acesso, horario_acesso, id, log) 
+SELECT cpf, nome, alias, email, matricula, auth, '00:14:22:01:23:45', '192.168.0.1', 'Laboratorio 1', 'ESP32-123456', 100, CURRENT_DATE, CURRENT_TIME, id, 'Apenas para debug esta row !' 
 FROM usuarios WHERE cpf = '000.000.000-00';
