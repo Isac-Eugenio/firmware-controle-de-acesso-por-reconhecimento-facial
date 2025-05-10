@@ -37,12 +37,12 @@ class FaceUtils:
         self.frame = new_frame
         self._face_locations = None  # Limpa o cache de localizações
         self._face_encodings = None  # Limpa o cache de encodings
-        print("Frame atualizado com sucesso.")
 
     def compare_faces(self, known_face_encodings, face_encoding_to_check, trust):
         _trust = -(trust/100)+1
 
         try:
+
             results = fr.compare_faces(known_face_encodings, face_encoding_to_check, tolerance=_trust)
         except Exception as e:
             raise FaceRecognitionError("Erro ao comparar rostos", str(e))

@@ -42,10 +42,11 @@ async def debug_stream():
         print(f"data: Erro ao processar: {str(e)}\n\n") """
     
     try:
-        async for step in api.insert_user(
-            data=data, 
+        async for step in api._validate_user(
+            columns=["nome", "id"], 
             encoding_column="encodings", 
-            table="usuarios"):
+            table="usuarios",
+            trust=60):
               print(step['message'])
             
     except Exception as e:

@@ -57,7 +57,7 @@ class ApiService:
             # outros erros
             raise FaceServiceError("Erro ao extrair encoding da face", str(e))
 
-    async def get_table(self, columns:list = None, table:str=None):
+    async def _get_table(self, columns:list = None, table:str=None):
         if not columns is None: 
             get = await self.db.select(columns=columns, table=table)
             return get
@@ -86,15 +86,25 @@ class ApiService:
 
         try:
             # Etapa 1: Inicialização da câmera
-            self._update_camera()
-            yield {"id": "01", "message": "Cam iniciada", "status": True, "final": False, "start": True}
+            try:
+                self._update_camera()
+                yield {"id": "01", "message": "Cam starting", "status": True, "final": False}
+                if not self._camera.status():
+                    yield {"id": "01", "message": "Cam off", "status": False, "final": True}
+                    return
+                
+                yield {"id": "01", "message": "Cam OK", "status": False, "final": True}
 
-            # Etapa 2: Captura facial
+            except Exception as e:
+                yield {"id": "01", "message": "Erro Cam", "status": False, "final": True}
+
             result = self.fr.encodings()
             face_encodings = result["encodings"]
+
             if not face_encodings:
                 yield {"id": "02", "message": "Sem rosto", "status": False, "final": True}
                 return
+            
             yield {"id": "02", "message": "Rosto lido", "status": True, "final": False}
 
             # Etapa 3: Verificação
@@ -111,13 +121,18 @@ class ApiService:
 
             for user in db_result["result"]:
                 db_encoding_str = getattr(user, encoding_column, None)
+                print(f"DB string: {db_encoding_str}")
+
                 if not db_encoding_str:
                     continue
 
+                # Se os valores no encoding estiverem separados por vírgulas
                 db_encoding = np.array([float(x) for x in db_encoding_str.split(',')])
 
+                print(f"DB Encoding (np.array): {db_encoding}")
+                print(f"Face Encoding: {face_enc}")
                 for face_enc in face_encodings:
-                    is_match = self.fr.compare_faces([db_encoding], face_enc, trust=trust)[0]
+                    is_match = self.fr.compare_faces(face_encoding_to_check=face_enc, known_face_encodings=[db_encoding], trust=trust, trust=trust)[0]
 
                     if is_match:
                         distance = np.linalg.norm(db_encoding - face_enc)
@@ -145,7 +160,6 @@ class ApiService:
                 }
 
         except Exception as e:
-            print(e)
             yield {
                 "id": "05",
                 "message": "Erro ao ler",
@@ -156,7 +170,7 @@ class ApiService:
 
 
 
-    async def insert_user(self, data: dict, encoding_column: str, table: str):
+    async def _insert_user(self, data: dict, encoding_column: str, table: str):
         yield {"id": "01", "message": "Coletando dados do formulário!", "status": True, "final": False}
         data_admin = data.get('admin_data')
         data_user = data.get('user_data')
@@ -243,7 +257,7 @@ class ApiService:
                 return
 
 
-    async def update_user(self, data: dict, encoding_column: str, table: str):
+    async def _update_user(self, data: dict, encoding_column: str, table: str):
         try:
             # Etapa 1: iniciar câmera
             yield {"id": "01", "message": "Iniciando câmera", "status": True, "final": False}
@@ -294,7 +308,7 @@ class ApiService:
             }
 
 
-    async def delete_user(self, data: dict, table: str):
+    async def _delete_user(self, data: dict, table: str):
         try:
             # Etapa 1: iniciar exclusão
             yield {"id": "01", "message": "Iniciando...", "status": True, "final": False}
@@ -331,5 +345,5 @@ class ApiService:
             }
 
 
-    async def search(self, data: dict, table: str):
+    async def _search(self, data: dict, table: str):
         return await self._get_data(data=data, table=table)
