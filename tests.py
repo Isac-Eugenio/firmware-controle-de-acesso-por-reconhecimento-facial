@@ -1,55 +1,59 @@
-from services.face_service import FaceService
 from services.login_service import LoginService
 from services.api_service import ApiService
 from core.utils.FaceUtils import FaceUtils
 from core.Camera import Camera
 from core.config.config import config
-from db.Database import Database
+from services.database_service import DatabaseService
 import asyncio
 
-db = Database()
-face_service = FaceService()
+db = DatabaseService()
 api = ApiService()
+
 _camera = Camera(config["hosts"]["camera"], config["ports"]["camera"])
 _frame = _camera.get_frame(config["details"]["camera"]["resolution"], 
                                 config["details"]["camera"]["format"])
 
-
-
-async def debug():
-    # DEBUG DO BANCO DE DADOS
-    # Para testar o banco de dados, descomente o código abaixo e execute o arquivo
-    user = {
-        "cpf": "010.100.000-01",  # Limpeza de espaços no CPF
+data = {
+    "admin_data": {
+        "id": '00000001',
+        "email": "root.debug@gmail.com"
+    },
+    "user_data": {
+        "cpf": "010.100.000-01",
         "alias": "Isac",
         "matricula": "0000000",
         "email": "discente@gmail.com",
         "nome": "teste1",
-        "auth": "discente",  # Valor para a coluna auth que está no banco (enum 'discente', 'docente', 'admin')
-        "encodings": "1,0,0,0,0,0"  # Dados codificados, caso necessário
+        "auth": "discente",
     }
+}
 
-    admin = {
-        "id": '00000001',
-        "email": "root.debug@gmail.com"
-    }
-
-    data = {
-        "admin_data": admin,
-        "user_data": user
-    }
-
-    try:
-        # Tenta executar a função de inserção
-        get = await api.insert_user_api(form=data)
-        print("Resultado da inserção:", get)
-    
+async def debug_stream():
+    """ try:
+        async for step in face_service._validate_user(
+            columns=["nome", "id"],
+            encoding_column="encodings",
+            table="usuarios",
+            trust=60
+        ):
+              print(step['message'])
+            
     except Exception as e:
-        # Em caso de erro, imprime a exceção
-        print(f"Erro durante a inserção: {e}")
-
-  
+        print(f"data: Erro ao processar: {str(e)}\n\n") """
     
+    try:
+        async for step in api.insert_user(
+            data=data, 
+            encoding_column="encodings", 
+            table="usuarios"):
+              print(step['message'])
+            
+    except Exception as e:
+        print(f"data: Erro ao processar: {str(e)}\n\n") 
+
+
+async def debug():
+   pass
 
 """ 
      # DEBUG DA CÂMERA
@@ -74,4 +78,4 @@ print(face_utils.encodings()) """
 
 if __name__ == "__main__":
 
-    asyncio.run(debug())
+    asyncio.run(debug_stream())

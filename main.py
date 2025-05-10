@@ -1,12 +1,11 @@
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, requests, responses, websockets
 from services.login_service import LoginService
-from services.face_service import FaceService
 from services.api_service import ApiService
 import json
 
-api_tools = FaceService()
 app = FastAPI()
+api = ApiService()
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,7 +62,7 @@ async def table_perfil(request: requests.Request):
 async def verificar_entrada(request: requests.Request):
     async def event_generator():
         try:
-            async for step in api_tools._validate_user(
+            async for step in api._validate_user(
                 columns=["nome", "email", "alias"],
                 encoding_column="encodings",  
                 table="usuarios",
@@ -84,17 +83,35 @@ async def verificar_entrada(request: requests.Request):
     
     return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
 
-@app.post('/novo_usuario')
-async def novo_usuario(request: requests.Request):
-    pass
+@app.post('/new_perfil')
+async def new_perfil(request: requests.Request):
+    req = await request.json()
 
+    async def event_generator():
+            try:
+                async for step in api.insert_user(
+                    data=req,
+                    encoding_column="encodings",  
+                    table="usuarios"
+                ):
+                    if not step["final"]:
+                        yield f"data: {step['message']}\n\n"
+                        
+                    else:
+                        f"Resultado: {step['message']}\n\n"
+
+                    
+            except Exception as e:
+                yield f"data: Erro ao processar: {str(e)}\n\n"
+    
+    return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
 # Area de testes via rede:
 
 @app.get("/debug")
 async def debug():
     async def event_generator():
         try:
-            async for step in api_tools._validate_user(
+            async for step in api._validate_user(
                 columns=["nome", "email", "alias"],
                 encoding_column="encodings",  
                 table="usuarios",

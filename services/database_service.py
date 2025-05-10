@@ -9,7 +9,7 @@ DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
     config["credentials"]["database"]["name"]
 )
 
-class Database:
+class DatabaseService:
     def __init__(self, database_url=None):
         self.database_url = database_url or DATABASE_URL
         self.database = AsyncDatabase(self.database_url)
@@ -117,9 +117,8 @@ class Database:
             # Executando a consulta passando os dados como parâmetros
             result = await self._execute_query(query=query, values=values)
         except Exception as e:
-            # Em caso de erro, capturar e exibir o erro
-            print(f"Erro ao executar a query: {e}")
             result = None
+            Exception(e)
 
         await self._disconnect()
 

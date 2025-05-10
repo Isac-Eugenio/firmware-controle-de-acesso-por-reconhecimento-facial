@@ -1,8 +1,8 @@
-from db.Database import Database
+from services.database_service import DatabaseService
 
 class LoginService:
     def __init__(self, form: dict):
-        self.database = Database()
+        self.database = DatabaseService()
         self._form = form
 
     async def login(self):
