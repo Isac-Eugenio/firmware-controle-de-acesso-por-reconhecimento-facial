@@ -89,7 +89,7 @@ async def new_perfil(request: requests.Request):
 
     async def event_generator():
             try:
-                async for step in api.insert_user(
+                async for step in api._insert_user(
                     data=req,
                     encoding_column="encodings",  
                     table="usuarios"
@@ -98,7 +98,7 @@ async def new_perfil(request: requests.Request):
                         yield f"data: {step['message']}\n\n"
                         
                     else:
-                        f"Resultado: {step['message']}\n\n"
+                        yield f"Resultado: {step['message']}\n\n"
 
                     
             except Exception as e:

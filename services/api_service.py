@@ -132,7 +132,7 @@ class ApiService:
                 print(f"DB Encoding (np.array): {db_encoding}")
                 print(f"Face Encoding: {face_enc}")
                 for face_enc in face_encodings:
-                    is_match = self.fr.compare_faces(face_encoding_to_check=face_enc, known_face_encodings=[db_encoding], trust=trust, trust=trust)[0]
+                    is_match = self.fr.compare_faces(face_encoding_to_check=face_enc, known_face_encodings=[db_encoding], trust=trust)[0]
 
                     if is_match:
                         distance = np.linalg.norm(db_encoding - face_enc)

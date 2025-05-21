@@ -42,11 +42,10 @@ async def debug_stream():
         print(f"data: Erro ao processar: {str(e)}\n\n") """
     
     try:
-        async for step in api._validate_user(
-            columns=["nome", "id"], 
-            encoding_column="encodings", 
-            table="usuarios",
-            trust=60):
+        async for step in api._insert_user(
+            data=data,
+            encoding_column="encodings",
+            table="usuarios"):
               print(step['message'])
             
     except Exception as e:
@@ -54,8 +53,9 @@ async def debug_stream():
 
 
 async def debug():
-   pass
-
+   result = api._extract_valid_face_encoding()
+   encoding = ",".join(str(x) for x in result["encoding"])
+   print(encoding)
 """ 
      # DEBUG DA CÂMERA
     # Para testar a câmera, descomente o código abaixo e execute o arquivo
