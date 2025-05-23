@@ -19,9 +19,8 @@ app.add_middleware(
 async def login(request: requests.Request):
     formulario = await request.json()
     service = LoginService(form=formulario)
-
     result = await service.login()
-
+    print(result)
     if result.get("auth", False):  # Verificando se a autenticação foi bem-sucedida
         return responses.JSONResponse(
             content={"message": "Login bem-sucedido", "data": result},
@@ -45,7 +44,7 @@ async def table_perfil(request: requests.Request):
     if result.get("auth", False):  # Verificando se a autenticação foi bem-sucedida
         list_result = []
         api_service = ApiService()
-        api_result = await api_service.get_table(columns=["nome", "email", "auth", "matricula"], table="usuarios")
+        api_result = await api_service._get_table(columns=["nome", "alias", "email", "auth", "matricula"], table="usuarios")
 
         for row in api_result['result']:
             list_result.append(dict(row))

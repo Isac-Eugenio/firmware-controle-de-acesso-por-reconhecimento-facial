@@ -14,15 +14,14 @@ class LoginService:
             }
 
             result = await self.database.select(
-                columns=["email", "nome", "auth"],
+                columns=["email", "alias", "auth"],
                 condition=condition,
                 table="usuarios",
                 values=values
             )
-
             if result['status'] and result['result']:
                 data = dict(result['result'][0])
-                if data['auth'] == 'docente':
+                if data['auth'] == 'admin':
                     return {'auth': True, 'dados': dict(result['result'][0]), 'error': None}
                 else:
                     return {'auth': False, 'dados': {}, 'error': None}

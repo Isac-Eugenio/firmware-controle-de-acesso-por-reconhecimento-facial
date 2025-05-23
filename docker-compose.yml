@@ -17,6 +17,4 @@ services:
     container_name: manager_db
     ports:
       - 8050:8080
-    environment:
-      - ADMINER_DESIGN=pepa
     restart: always
