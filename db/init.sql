@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
     `alias` VARCHAR(11) NOT NULL,
     `email` VARCHAR(255) UNIQUE NOT NULL CHECK (email REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'),  
     `matricula` VARCHAR(255),
-    `senha` VARCHAR(255),
+    `senha` VARCHAR(9),
     `auth` ENUM('discente', 'docente', 'admin') NOT NULL DEFAULT 'discente',
     `encodings` TEXT NOT NULL,
     `id` CHAR(8) NOT NULL UNIQUE,

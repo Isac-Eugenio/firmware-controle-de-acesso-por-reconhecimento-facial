@@ -14,7 +14,7 @@ class LoginService:
             }
 
             result = await self.database.select(
-                columns=["email", "alias", "auth"],
+                columns=["email", "alias", "auth", "id"],
                 condition=condition,
                 table="usuarios",
                 values=values
