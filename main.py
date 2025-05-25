@@ -17,20 +17,31 @@ app.add_middleware(
 
 @app.post("/login")
 async def login(request: requests.Request):
-    formulario = await request.json()
-    service = LoginService(form=formulario)
-    result = await service.login()
-    print(result)
-    if result.get("auth", False):  # Verificando se a autenticação foi bem-sucedida
+    try:
+        formulario = await request.json()
+        print(formulario)
+
+        service = LoginService(form=formulario)
+        result = await service.login()
+        print(result)
+        if result.get("auth", False): 
+            return responses.JSONResponse(
+                content={"message": "Login bem-sucedido", "data": result},
+                status_code=200
+            )
+        else:
+            return responses.JSONResponse(
+                content={"message": "Acesso Negado", "data": result},
+                status_code=200
+            )
+    
+    except Exception as e:
+        print(f"Erro ao processar o login: {str(e)}")
         return responses.JSONResponse(
-            content={"message": "Login bem-sucedido", "data": result},
-            status_code=200
+            content={"message": "Erro interno do servidor", "error": str(e)},
+            status_code=500
         )
-    else:
-        return responses.JSONResponse(
-            content={"error": "Falha na autenticação"},
-            status_code=401  # Código de status adequado para falha de autenticação
-        )
+
 
 
 @app.post('/tabela_perfis')
@@ -44,7 +55,7 @@ async def table_perfil(request: requests.Request):
     if result.get("auth", False):  # Verificando se a autenticação foi bem-sucedida
         list_result = []
         api_service = ApiService()
-        api_result = await api_service._get_table(columns=["nome", "alias", "email", "auth", "matricula"], table="usuarios")
+        api_result = await api_service._get_table(columns=["nome", "alias", "email", "permission_level", "matricula"], table="usuarios")
 
         for row in api_result['result']:
             list_result.append(dict(row))
@@ -85,7 +96,7 @@ async def verificar_entrada(request: requests.Request):
 @app.post('/new_perfil')
 async def new_perfil(request: requests.Request):
     req = await request.json()
-
+    
     async def event_generator():
             try:
                 async for step in api._insert_user(

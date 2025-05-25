@@ -195,6 +195,9 @@ class ApiService:
                 condition=condition
             )
 
+            admin_check = admin_check['result']['result']
+
+            print(admin_check)
             if not bool(admin_check):
                 yield {"id": "02", "message": "Usuário não autorizado para criar novos usuários!", "status": False, "final": True}
                 return

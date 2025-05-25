@@ -7,28 +7,29 @@ class LoginService:
 
     async def login(self):
         try:
-            condition = "email = :email AND senha = :senha"
+            condition = "email = :email AND senha = :senha AND permission_level = :permission_level"
             values = {
                 "email": self._form["email"],
-                "senha": self._form["senha"]
+                "senha": self._form["senha"],
+                "permission_level": "adminstrador"
             }
 
             result = await self.database.select(
-                columns=["email", "alias", "permission_level", "id"],
+                columns=["email", "alias", "permission_level", "id", "matricula"],
                 condition=condition,
                 table="usuarios",
                 values=values
             )
+
             if result['status'] and result['result']:
                 data = dict(result['result'][0])
-                if data['permission_level'] == 'adminstradorstrador':
-                    return {'permission_level': True, 'dados': dict(result['result'][0]), 'error': None}
-                else:
-                    return {'permission_level': False, 'dados': {}, 'error': None}
+                return {'auth': True, 'dados': dict(result['result'][0]), 'error': None}
+            
             else:
-                return {'permission_level': False, 'dados': {}, 'error': None}
+                return {'auth': False, 'dados': {}, 'error': None}
 
         except Exception as e:
-            return {'permission_level': False, 'dados': {}, 'error': str(e)}
+            print(str(e))
+            return {'auth': False, 'dados': {}, 'error': "Erro ao autenticar o usuário"}
 
     
