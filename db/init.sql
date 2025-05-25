@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
     `email` VARCHAR(255) UNIQUE NOT NULL CHECK (email REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'),  
     `matricula` VARCHAR(255),
     `senha` VARCHAR(9),
-    `auth` ENUM('discente', 'docente', 'admin') NOT NULL DEFAULT 'discente',
+    `permission_level` ENUM('discente', 'docente', 'adminstrador') NOT NULL DEFAULT 'discente',
     `encodings` TEXT NOT NULL,
     `id` CHAR(8) NOT NULL UNIQUE,
     PRIMARY KEY (`id`)
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `historico` (
     `cpf` VARCHAR(14) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `matricula` VARCHAR(255),
-    `auth` ENUM('discente', 'docente', 'admin') NOT NULL DEFAULT 'discente',  
+    `permission_level` ENUM('discente', 'docente', 'adminstrador') NOT NULL DEFAULT 'discente',  
     `mac` VARCHAR(20) DEFAULT NULL,  
     `ip` VARCHAR(15) NOT NULL,  
     `local` VARCHAR(100) DEFAULT NULL,  
@@ -52,30 +52,30 @@ CREATE TRIGGER before_update_usuarios
 BEFORE UPDATE ON usuarios
 FOR EACH ROW
 BEGIN
-    IF NEW.auth = 'admin' THEN
+    IF NEW.permission_level = 'adminstrador' THEN
         IF NEW.senha IS NULL OR NEW.senha = '' THEN
             SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Usuários com auth = admin devem ter uma senha.';
+            SET MESSAGE_TEXT = 'Usuários com permission_level = adminstrador devem ter uma senha.';
         END IF;
     ELSE
         IF NEW.senha IS NOT NULL AND NEW.senha <> '' THEN
             SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Apenas usuários admin podem ter senha.';
+            SET MESSAGE_TEXT = 'Apenas usuários adminstradores podem ter senha.';
         END IF;
     END IF;
 END;
 //
 DELIMITER ;
 
--- Inserir usuário admin root (com ID manual)
-INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, auth, encodings, id) 
-VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'admin', '0,0,0,0', '00000001');
+-- Inserir usuário adminstrador root (com ID manual)
+INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, permission_level, encodings, id) 
+VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'adminstrador', '0,0,0,0', '00000001');
 
 -- Dispositivo de teste
 INSERT INTO dispositivos (mac, local)
 VALUES ('00:14:22:01:23:45', 'Laboratorio 1');
 
 -- Registro no histórico
-INSERT INTO historico (cpf, nome, alias, email, matricula, auth, mac, ip, local, trust, data_acesso, horario_acesso, id, log) 
-SELECT cpf, nome, alias, email, matricula, auth, '00:14:22:01:23:45', '192.168.0.1', 'Laboratorio 1', 100, CURRENT_DATE, CURRENT_TIME, id, 'Apenas para debug esta row !' 
+INSERT INTO historico (cpf, nome, alias, email, matricula, permission_level, mac, ip, local, trust, data_acesso, horario_acesso, id, log) 
+SELECT cpf, nome, alias, email, matricula, permission_level, '00:14:22:01:23:45', '192.168.0.1', 'Laboratorio 1', 100, CURRENT_DATE, CURRENT_TIME, id, 'Apenas para debug esta row !' 
 FROM usuarios WHERE cpf = '000.000.000-00';

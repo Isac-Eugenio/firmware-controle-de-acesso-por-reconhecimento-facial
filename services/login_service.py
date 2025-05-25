@@ -14,21 +14,21 @@ class LoginService:
             }
 
             result = await self.database.select(
-                columns=["email", "alias", "auth", "id"],
+                columns=["email", "alias", "permission_level", "id"],
                 condition=condition,
                 table="usuarios",
                 values=values
             )
             if result['status'] and result['result']:
                 data = dict(result['result'][0])
-                if data['auth'] == 'admin':
-                    return {'auth': True, 'dados': dict(result['result'][0]), 'error': None}
+                if data['permission_level'] == 'adminstradorstrador':
+                    return {'permission_level': True, 'dados': dict(result['result'][0]), 'error': None}
                 else:
-                    return {'auth': False, 'dados': {}, 'error': None}
+                    return {'permission_level': False, 'dados': {}, 'error': None}
             else:
-                return {'auth': False, 'dados': {}, 'error': None}
+                return {'permission_level': False, 'dados': {}, 'error': None}
 
         except Exception as e:
-            return {'auth': False, 'dados': {}, 'error': str(e)}
+            return {'permission_level': False, 'dados': {}, 'error': str(e)}
 
     
