@@ -47,20 +47,20 @@ async def login(request: requests.Request):
 @app.post('/tabela_perfis')
 async def table_perfil(request: requests.Request):
     formulario = await request.json()
-    service = LoginService(form=formulario)
-    print(f'Request: {formulario}')
-
-    result = await service.login()
-
-    if result.get("auth", False):  # Verificando se a autenticação foi bem-sucedida
+    
+    auth = await api._verify_user(data=formulario)
+    result = dict(auth)
+    print(result)
+    
+    """ if result.get("auth", True):  # Verificando se a autenticação foi bem-sucedida
         list_result = []
         api_service = ApiService()
         api_result = await api_service._get_table(columns=["nome", "alias", "email", "permission_level", "matricula"], table="usuarios")
 
         for row in api_result['result']:
-            list_result.append(dict(row))
+            list_result.append(dict(row))   """
 
-        return {"error": None, "tabela": list_result}
+    return {"error": None, "tabela": []}
 
     return responses.JSONResponse(
         content={"error": "Erro ao ler as tabelas de perfis", "tabela": []},

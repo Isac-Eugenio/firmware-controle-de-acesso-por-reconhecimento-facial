@@ -1,31 +1,43 @@
 import random
 from core.Camera import Camera
 from core.exceptions.face_exceptions import FaceServiceError
-from core.utils.FaceUtils import FaceUtils
+from core.utils.face_utils import FaceUtils
 from .database_service import DatabaseService
 from core.config.config import config
 import numpy as np
 import ast
 
+_COLUMNS_DATABASE_PERFIS = config["details"]["database"]["tables"]["perfis"]["columns"]
+_PASSWORD_COLUMN = config["details"]["database"]["tables"]["perfis"]["password_column"]
+_ENCODING_COLUMN = config["details"]["database"]["tables"]["perfis"]["encoding_column"]
+_NAME_TABLE_PERFIS = config["details"]["database"]["tables"]["perfis"]["name"]
+
+_TRUST = config["details"]["database"]["tables"]["perfis"]["trust"]
+
+_HOST_CAMERA = config["hosts"]["camera"]
+_PORT_CAMERA = config["ports"]["camera"]
+_CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
+_CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
+
 class ApiService:
     def __init__(self):
         try:
-            _camera = Camera(config["hosts"]["camera"], config["ports"]["camera"])
-            _frame = _camera.get_frame(config["details"]["camera"]["resolution"], 
-                                       config["details"]["camera"]["format"])
+            _camera = Camera(_HOST_CAMERA, _PORT_CAMERA)
+            _frame = _camera.get_frame(_CONFIG_CAMERA_RESOLUTION, _CONFIG_CAMERA_FORMAT)
 
             self.fr = FaceUtils(_frame)
             self.db = DatabaseService()
             self._camera = _camera
+
         except Exception as e:
             raise FaceServiceError("Erro ao inicializar o FaceService", str(e))
 
     def _update_camera(self):
         """Método para atualizar o frame da câmera e atualizar o FaceUtils."""
         try:
-            _frame = self._camera.get_frame(config["details"]["camera"]["resolution"], 
-                                            config["details"]["camera"]["format"])
+            _frame = self._camera.get_frame(_CONFIG_CAMERA_RESOLUTION, _CONFIG_CAMERA_FORMAT)
             self.fr.update_frame(_frame)
+            
         except Exception as e:
             raise FaceServiceError("Erro ao atualizar a câmera", str(e))
 
@@ -80,9 +92,22 @@ class ApiService:
         
         except Exception as e:
             raise FaceServiceError("Erro ao buscar dados", str(e))
+    
+    async def _verify_user(self, data: dict):
+        try:
+            await self.db._ensure_connected()
+
+            condition = " AND ".join([f"{key} = '{value}'" for key, value in data.items()])
+            result = await self.db.count(table=_ENCODING_COLUMN, condition=condition)
+            
+            return result
         
-    async def _validate_user(self, columns: list, table: str, encoding_column: str, trust: int):
-        columns.append(encoding_column)
+        except Exception as e:
+            raise FaceServiceError("Erro ao verificar usuário", str(e))
+ 
+    async def _validate_user(self):
+        
+        columns = _COLUMNS_DATABASE_PERFIS.append(_ENCODING_COLUMN)
 
         try:
             # Etapa 1: Inicialização da câmera
@@ -109,7 +134,7 @@ class ApiService:
 
             # Etapa 3: Verificação
             await self.db._ensure_connected()
-            db_result = await self.db.select(table=table, columns=columns)
+            db_result = await self.db.select(table=_NAME_TABLE_PERFIS, columns=columns)
             if not db_result["status"] or not db_result["result"]:
                 yield {"id": "03", "message": "Acesso negado", "status": False, "final": True}
                 return
@@ -120,7 +145,7 @@ class ApiService:
             best_distance = float('inf')
 
             for user in db_result["result"]:
-                db_encoding_str = getattr(user, encoding_column, None)
+                db_encoding_str = getattr(user, _ENCODING_COLUMN, None)
                 print(f"DB string: {db_encoding_str}")
 
                 if not db_encoding_str:
@@ -132,7 +157,7 @@ class ApiService:
                 print(f"DB Encoding (np.array): {db_encoding}")
                 print(f"Face Encoding: {face_enc}")
                 for face_enc in face_encodings:
-                    is_match = self.fr.compare_faces(face_encoding_to_check=face_enc, known_face_encodings=[db_encoding], trust=trust)[0]
+                    is_match = self.fr.compare_faces(face_encoding_to_check=face_enc, known_face_encodings=[db_encoding], trust=_TRUST)[0]
 
                     if is_match:
                         distance = np.linalg.norm(db_encoding - face_enc)
@@ -142,7 +167,7 @@ class ApiService:
 
             if best_match:
                 best_match = dict(best_match)
-                best_match.pop(encoding_column, None)
+                best_match.pop(_ENCODING_COLUMN, None)
                 yield {
                     "id": "04",
                     "message": f"Ola! {best_match['alias']}",
@@ -170,7 +195,7 @@ class ApiService:
 
 
 
-    async def _insert_user(self, data: dict, encoding_column: str, table: str):
+    async def _insert_user(self, data: dict):
         yield {"id": "01", "message": "Coletando dados do formulário!", "status": True, "final": False}
         data_admin = data.get('admin_data')
         data_user = data.get('user_data')
@@ -233,7 +258,7 @@ class ApiService:
         # Etapa 3: Preparando dados
         yield {"id": "03", "message": "Preparando cadastro...", "status": True, "final": False}
         encoding = ",".join(str(x) for x in face_data["encoding"])
-        data[encoding_column] = encoding
+        data[_ENCODING_COLUMN] = encoding
 
         # TRY 3: Envio ao banco de dados
         try:
@@ -241,7 +266,7 @@ class ApiService:
 
             await self.db._ensure_connected()
 
-            result = await self.db.insert(table=table, data=data)
+            result = await self.db.insert(table=_NAME_TABLE_PERFIS, data=data)
 
             if not result.get("status", False):
                 yield {"id": "04", "message": "Erro ao cadastar o novo perfil", "status": False, "final": True}

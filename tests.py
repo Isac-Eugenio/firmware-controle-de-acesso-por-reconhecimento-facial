@@ -1,6 +1,6 @@
 from services.login_service import LoginService
 from services.api_service import ApiService
-from core.utils.FaceUtils import FaceUtils
+from core.utils.face_utils import FaceUtils
 from core.Camera import Camera
 from core.config.config import config
 from services.database_service import DatabaseService
@@ -79,4 +79,4 @@ print(face_utils.encodings()) """
 
 if __name__ == "__main__":
 
-    asyncio.run(debug_stream())
+    asyncio.run(debug)

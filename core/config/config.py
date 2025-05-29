@@ -21,6 +21,27 @@ config = {
          "camera": {
              "resolution":"800x600",
              "format":"JPG"
+         },
+
+         "database":{
+             "tables":{   
+                 "perfis":{
+                    "name":"usuarios",
+                    "columns":["nome", "email", "alias", "matricula", "id"],
+                    "password_column":"senha",
+                    "encoding_column":"encodings",
+                    "trust":60
+                 },
+
+                 "historico":{
+                    "name":"historico",
+                 },
+
+                 "devices":{
+                    "name":"dispositivos",
+                 }
+
+             }
          }
     },
 }
