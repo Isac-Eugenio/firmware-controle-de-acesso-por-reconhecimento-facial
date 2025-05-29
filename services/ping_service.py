@@ -1,7 +1,7 @@
 import platform
 import subprocess
 
-class Ping:
+class PingService:
     def __init__(self, ip: str):
         self.ip = ip
 
