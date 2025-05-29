@@ -1,3 +1,4 @@
+from core.errors.camera_exceptions import CameraException
 from services.ping_service import PingService
 from core.config import config
 from utils.api_utils import ApiUtils
@@ -22,5 +23,6 @@ class CameraModel:
             self.status_online = is_online
             return is_online
         except Exception as e:
-            print(f"Erro ao verificar o status da câmera: {e}")
-            return False
+            self.status_online = False
+            raise CameraException(f"Erro ao verificar status da câmera: {str(e)}")
+        
