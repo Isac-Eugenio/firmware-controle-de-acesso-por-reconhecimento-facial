@@ -9,7 +9,7 @@ DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
     config["credentials"]["database"]["name"]
 )
 
-class DatabaseService:
+class DatabaseRepository:
     def __init__(self, database_url=None):
         self.database_url = database_url or DATABASE_URL
         self.database = AsyncDatabase(self.database_url)
