@@ -1,7 +1,7 @@
 import random
 from core.Camera import Camera
 from core.exceptions.face_exceptions import FaceServiceError
-from core.utils.face_utils import FaceUtils
+from models.face_model import FaceUtils
 from .database_service import DatabaseService
 from core.config.config import config
 import numpy as np

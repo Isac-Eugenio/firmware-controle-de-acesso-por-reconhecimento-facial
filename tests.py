@@ -1,6 +1,7 @@
+from models.user_model import UserModel
 from services.login_service import LoginService
 from services.api_service import ApiService
-from core.utils.face_utils import FaceUtils
+from models.face_model import FaceUtils
 from core.Camera import Camera
 from core.config.config import config
 from services.database_service import DatabaseService
@@ -13,6 +14,12 @@ _camera = Camera(config["hosts"]["camera"], config["ports"]["camera"])
 _frame = _camera.get_frame(config["details"]["camera"]["resolution"], 
                                 config["details"]["camera"]["format"])
 
+
+_modelo = UserModel()
+
+senha = _modelo.set_senha("@Isac1998")
+
+_modelo.nome = "Isac"
 data = {
     "admin_data": {
         "id": '00000001',
