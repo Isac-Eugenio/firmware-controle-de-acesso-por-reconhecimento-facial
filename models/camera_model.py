@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 import cv2
-from .Ping import Ping
+from ..core.Ping import Ping
 
-class Camera(ABC):
+class CameraModel(ABC):
     def __init__(self, host, port):
         self.host = host
         self.port = port

@@ -9,7 +9,7 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ./db:/docker-entrypoint-initdb.d
+      - ./core/db:/docker-entrypoint-initdb.d
     restart: always
 
   manager:

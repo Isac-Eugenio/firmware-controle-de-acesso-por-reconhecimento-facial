@@ -1,6 +1,6 @@
 import random
-from core.Camera import Camera
-from core.exceptions.face_exceptions import FaceServiceError
+from models.camera_model import Camera
+from core.errors.face_exceptions import FaceServiceError
 from models.face_model import FaceUtils
 from .database_service import DatabaseService
 from core.config.config import config

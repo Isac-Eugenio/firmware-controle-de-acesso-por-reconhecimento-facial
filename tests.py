@@ -2,7 +2,7 @@ from models.user_model import UserModel
 from services.login_service import LoginService
 from services.api_service import ApiService
 from models.face_model import FaceUtils
-from core.Camera import Camera
+from models.camera_model import Camera
 from core.config.config import config
 from services.database_service import DatabaseService
 import asyncio
@@ -60,9 +60,8 @@ async def debug_stream():
 
 
 async def debug():
-   result = api._extract_valid_face_encoding()
-   encoding = ",".join(str(x) for x in result["encoding"])
-   print(encoding)
+   result = await db.select_one(table="usuarios")
+   print(result)
 """ 
      # DEBUG DA CÂMERA
     # Para testar a câmera, descomente o código abaixo e execute o arquivo
@@ -86,4 +85,4 @@ print(face_utils.encodings()) """
 
 if __name__ == "__main__":
 
-    asyncio.run(debug)
+    asyncio.run(debug())
