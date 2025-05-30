@@ -3,7 +3,11 @@ import asyncio
 import cv2
 import numpy as np
 
+from models.camera_model import CameraModel
 from models.face_model import FaceModel 
+
+from core.config.app_config import config
+from repository.camera_repository import CameraRepository
 
 """ 
 api = ApiService()
@@ -28,8 +32,6 @@ data = {
     }
 } """
 
-modelo_teste = FaceModel()
-
 async def debug_stream():
     pass
     """ try:
@@ -45,9 +47,19 @@ async def debug_stream():
 
 async def debug_async():
    pass
-   
+
+_HOST_CAMERA = config["hosts"]["camera"]
+_PORT_CAMERA = config["ports"]["camera"]
+_CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
+_CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
+
+
+modelo_teste = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
+repository_teste = CameraRepository(model=modelo_teste)
+
 def debug():
-   pass
+   process =repository_teste.get_frame(_CONFIG_CAMERA_RESOLUTION, _CONFIG_CAMERA_FORMAT)
+   print(process)
 
 if __name__ == "__main__":
    debug()

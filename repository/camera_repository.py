@@ -5,11 +5,11 @@ import cv2
 
 class CameraRepository:
     def __init__(self, model: CameraModel):
-        self.host = model._host
-        self.port = model._port
-        self.sizes = model._sizes
-        self.types = model._types
-        self.full_host = model._full_host
+        self.host = model.host
+        self.port = model.port
+        self.sizes = model.sizes
+        self.types = model.types
+        self.full_host = model.full_host
         self.status_online = model.status()
 
     def __str__(self):
