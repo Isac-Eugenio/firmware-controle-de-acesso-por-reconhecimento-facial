@@ -6,3 +6,6 @@ class ApiUtils:
     
     def _ensure_str_values(self, data: dict):
         return {key: f"'{value}'" for key, value in data.items()}
+    
+    is_empty_list = lambda list: [] if not list else list
+    

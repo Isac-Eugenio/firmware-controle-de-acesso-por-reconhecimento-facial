@@ -121,7 +121,6 @@ class ApiRepository:
 
             for user in db_result["result"]:
                 db_encoding_str = getattr(user, _ENCODING_COLUMN, None)
-                print(f"DB string: {db_encoding_str}")
 
                 if not db_encoding_str:
                     continue
@@ -129,8 +128,6 @@ class ApiRepository:
                 # Se os valores no encoding estiverem separados por vírgulas
                 db_encoding = np.array([float(x) for x in db_encoding_str.split(',')])
 
-                print(f"DB Encoding (np.array): {db_encoding}")
-                print(f"Face Encoding: {face_enc}")
                 for face_enc in face_encodings:
                     is_match = self.fr.compare_faces(face_encoding_to_check=face_enc, known_face_encodings=[db_encoding], trust=_TRUST)[0]
 

@@ -1,11 +1,12 @@
-from controllers.camera_controller import CameraController
+""" from controllers.camera_controller import CameraController
 from core.errors.camera_exceptions import CameraException
 from models.user_model import UserModel
 from services.api_service import ApiService
 from models.face_model import FaceModel
 from core.config.app_config import config
+"""
 import asyncio
-import cv2
+import cv2 
 
 """ 
 api = ApiService()
@@ -30,7 +31,6 @@ data = {
     }
 } """
 
-_camera = CameraController()
 
 async def debug_stream():
     pass
@@ -46,12 +46,11 @@ async def debug_stream():
 
 
 async def debug():
-    try:
-       result = _camera.get_frame("800x600", "jpg")
+   list = [1]
+   if not list:
+       print("p")
+   
 
-    except CameraException as e:
-        print(e)
-        
 if __name__ == "__main__":
 
     asyncio.run(debug())
