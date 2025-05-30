@@ -28,3 +28,8 @@ class FaceModelError(FaceRecognitionException):
     def __init__(self, message, details=None):
         full_message = f"Face Model exception: {message}"
         super().__init__(full_message, details)
+
+class FaceServiceError(FaceRecognitionException):
+    def __init__(self, message, details=None):
+        full_message = f"Face Service exception: {message}"
+        super().__init__(full_message, details)
