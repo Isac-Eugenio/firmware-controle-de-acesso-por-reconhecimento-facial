@@ -1,11 +1,10 @@
 import cv2
 from core.errors.camera_exceptions import CameraException, CameraValueError, CameraConnectionError
-from ..services.ping_service import Ping
+from services.ping_service import PingService as Ping
 from models.camera_model import CameraModel
 
 class CameraRepository:
-    def __init__(self):
-        model = CameraModel()
+    def __init__(self, model: CameraModel):
         self.host = model.host
         self.port = model.port
         self.sizes = model.sizes
@@ -29,7 +28,7 @@ class CameraRepository:
             raise CameraConnectionError(f"Câmera em {self.full_host} está offline! Verifique a conexão.")
 
         try:
-            self.validate_size_and_type(size, type)
+            self.validate_size_and_type(size, type.upper())
             _host_camera = f"http://{self.full_host}/{size}.{type.lower()}"
             cap = cv2.VideoCapture(_host_camera)
 

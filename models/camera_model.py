@@ -1,6 +1,6 @@
 from core.errors.camera_exceptions import CameraException
 from services.ping_service import PingService
-from core.config import config
+from core.config import app_config
 from utils.api_utils import ApiUtils
 
 class CameraModel:

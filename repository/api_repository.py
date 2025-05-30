@@ -1,5 +1,6 @@
 import numpy as np
-from core.config import config
+from controllers.camera_controller import CameraController
+from core.config.app_config import config
 from core.errors.face_exceptions import FaceServiceError
 
 
@@ -17,15 +18,8 @@ _CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
 
 class ApiRepository:
     def __init__(self):
-        pass
-    
-    def _update_camera(self):
-        try:
-            _frame = self._camera.get_frame(_CONFIG_CAMERA_RESOLUTION, _CONFIG_CAMERA_FORMAT)
-            self.fr.update_frame(_frame)
-            
-        except Exception as e:
-            raise FaceServiceError("Erro ao atualizar a câmera", str(e))
+        self.camera_controller = CameraController()
+        self._update_camera = self.camera_controller._update_camera()
 
     def _extract_valid_face_encoding(self):
         try:

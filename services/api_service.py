@@ -3,7 +3,7 @@ from models.camera_model import Camera
 from core.errors.face_exceptions import FaceServiceError
 from models.face_model import FaceUtils
 from repository.database_repository import DatabaseRepository
-from core.config.config import config
+from core.config.app_config import config
 import numpy as np
 import ast
 
