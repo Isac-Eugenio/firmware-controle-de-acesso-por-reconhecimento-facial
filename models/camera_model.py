@@ -15,6 +15,7 @@ class CameraModel:
                       "1280x1024", "1600x1200"]
         
         self._types = ["BMP", "JPG", "MJPEG"]
+        
         self._full_host = f"{self._host}:{self._port}"
 
     def status(self):
@@ -25,5 +26,5 @@ class CameraModel:
             return is_online
         except Exception as e:
             self.status_online = False
-            raise CameraException(f"Erro ao verificar status da câmera: {str(e)}")
-        
+            raise CameraException(message=f"Erro ao verificar status da câmera: {str(e)}")
+    

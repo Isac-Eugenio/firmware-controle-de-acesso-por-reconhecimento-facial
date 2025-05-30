@@ -5,46 +5,65 @@ class FaceModel:
     def __init__(self):
         self.encoding = []
         self.location = []
-    
-    def _encoding_string(encoding: list):
+
+    @staticmethod
+    def _encoding_string(encoding: list) -> str:
         try:
-            process = ",".join(str(x) for x in encoding)
-            return process
-        
-        except (Exception, ValueError) as e:
-            raise FaceEncodingError(e)
-        
-    def _encoding_array(encoding: str):
+            if not isinstance(encoding, (list, np.ndarray)):
+                raise ValueError("Esperado uma lista ou np.ndarray para codificação.")
+            
+            if encoding is None or len(encoding) < 128:
+                raise FaceEncodingError("Encoding vazio ou incompleto")
+            
+            return ",".join(str(float(x)) for x in encoding)
+
+        except (ValueError, TypeError) as e:
+            raise FaceEncodingError("Erro ao converter encoding para string") from e
+
+    @staticmethod
+    def _encoding_array(encoding: str) -> np.ndarray:
         try:
-            process = np.array([float(x) for x in encoding.split(',')])
-            return process
-        
-        except (Exception, ValueError) as e:
-            raise FaceEncodingError(e)
-        
-    def to_model(self, encoding: list, location: list):
+            if not isinstance(encoding, str):
+                raise ValueError("Esperado uma string para converter em array.")
+            
+            encoding_list = np.array([float(x.strip()) for x in encoding.split(',') if x.strip()])
+
+            if len(encoding_list) < 128:
+                raise FaceEncodingError("Encoding vazio ou incompleto")
+
+            return encoding_list
+
+        except (ValueError, TypeError) as e:
+            raise FaceEncodingError("Erro ao converter string para encoding") from e
+
+    def to_model(self, encoding: list, location: list) -> 'FaceModel':
         try:
-            if not encoding:
-               raise FaceEncodingError("encoding Vazio")
+            if encoding is None or len(encoding) < 128:
+                raise FaceEncodingError("Encoding vazio ou incompleto")
             
             if not location:
-                raise FaceLocationError("location Vazio")
-            
+                raise FaceLocationError("Location vazio")
+
             new_model = FaceModel()
             new_model.encoding = encoding
             new_model.location = location
 
             return new_model
-        
+
         except Exception as e:
-           raise FaceModelError(e)
-    
-    def to_map(self, model: 'FaceModel'):
+            raise FaceModelError("Erro ao montar FaceModel") from e
+
+    def to_map(self, model: 'FaceModel' = None) -> dict:
         try:
+            if model is None:
+                return {
+                "encoding": self.encoding,
+                "location": self.location
+                }
+            
             return {
                 "encoding": self._encoding_string(model.encoding),
                 "location": model.location
             }
         except Exception as e:
-            raise FaceModelError(e)
-               
+            raise FaceModelError("Erro ao converter FaceModel para mapa") from e

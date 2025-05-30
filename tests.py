@@ -1,12 +1,9 @@
-""" from controllers.camera_controller import CameraController
-from core.errors.camera_exceptions import CameraException
-from models.user_model import UserModel
-from services.api_service import ApiService
-from models.face_model import FaceModel
-from core.config.app_config import config
-"""
+
 import asyncio
-import cv2 
+import cv2
+import numpy as np
+
+from models.face_model import FaceModel 
 
 """ 
 api = ApiService()
@@ -31,6 +28,7 @@ data = {
     }
 } """
 
+modelo_teste = FaceModel()
 
 async def debug_stream():
     pass
@@ -45,12 +43,12 @@ async def debug_stream():
         print(f"data: Erro ao processar: {str(e)}\n\n")  """
 
 
-async def debug():
-   list = [1]
-   if not list:
-       print("p")
+async def debug_async():
+   pass
    
+def debug():
+   pass
 
 if __name__ == "__main__":
+   debug()
 
-    asyncio.run(debug())
