@@ -1,9 +1,12 @@
 from controllers.camera_controller import CameraController
+from core.errors.camera_exceptions import CameraException
 from models.user_model import UserModel
 from services.api_service import ApiService
-from models.face_model import FaceUtils
+from models.face_model import FaceModel
 from core.config.app_config import config
 import asyncio
+import cv2
+
 """ 
 api = ApiService()
 
@@ -30,8 +33,8 @@ data = {
 _camera = CameraController()
 
 async def debug_stream():
-    
-    try:
+    pass
+    """ try:
         async for step in api._insert_user(
             data=data,
             encoding_column="encodings",
@@ -39,14 +42,16 @@ async def debug_stream():
               print(step['message'])
             
     except Exception as e:
-        print(f"data: Erro ao processar: {str(e)}\n\n") 
+        print(f"data: Erro ao processar: {str(e)}\n\n")  """
 
 
 async def debug():
-   result = _camera.get_frame("800x600", "jpg")
-   print(result)
+    try:
+       result = _camera.get_frame("800x600", "jpg")
 
-
+    except CameraException as e:
+        print(e)
+        
 if __name__ == "__main__":
 
     asyncio.run(debug())

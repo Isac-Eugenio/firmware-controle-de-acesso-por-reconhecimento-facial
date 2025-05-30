@@ -1,7 +1,7 @@
 import random
-from models.camera_model import Camera
+from models.camera_model import CameraModel
 from core.errors.face_exceptions import FaceServiceError
-from models.face_model import FaceUtils
+from models.face_model import FaceModel
 from repository.database_repository import DatabaseRepository
 from core.config.app_config import config
 import numpy as np
@@ -22,10 +22,10 @@ _CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
 class ApiService:
     def __init__(self):
         try:
-            _camera = Camera(_HOST_CAMERA, _PORT_CAMERA)
+            _camera = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
             _frame = _camera.get_frame(_CONFIG_CAMERA_RESOLUTION, _CONFIG_CAMERA_FORMAT)
 
-            self.fr = FaceUtils(_frame)
+            self.fr = FaceModel(_frame)
             self.db = DatabaseRepository()
             self._camera = _camera
 

@@ -1,15 +1,15 @@
-import cv2
-from core.errors.camera_exceptions import CameraException, CameraValueError, CameraConnectionError
+from core.errors.camera_exceptions import *
 from services.ping_service import PingService as Ping
 from models.camera_model import CameraModel
+import cv2
 
 class CameraRepository:
     def __init__(self, model: CameraModel):
-        self.host = model.host
-        self.port = model.port
-        self.sizes = model.sizes
-        self.types = model.types
-        self.full_host = model.full_host
+        self.host = model._host
+        self.port = model._port
+        self.sizes = model._sizes
+        self.types = model._types
+        self.full_host = model._full_host
         self.status_online = model.status()
 
     def __str__(self):
@@ -45,6 +45,7 @@ class CameraRepository:
             return frame
 
         except (CameraValueError, CameraConnectionError, CameraException):
-            raise  # Propaga os erros personalizados como estão
+            raise 
+        
         except Exception as e:
-            raise CameraException(str(e))  # Erro genérico inesperado
+            raise CameraException(str(e))

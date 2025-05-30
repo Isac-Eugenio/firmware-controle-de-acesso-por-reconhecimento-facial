@@ -20,9 +20,9 @@ class CameraController:
         try:
             _frame = self.camera_repository.get_frame(size, type)
             return _frame
-
-        except (CameraValueError, CameraConnectionError, CameraException) as e:
-            raise CameraException(f"Controller: {e}")
+        
+        except (CameraValueError, CameraConnectionError, CameraException):
+            raise 
     
     def _update_camera(self):
         try:
@@ -30,4 +30,4 @@ class CameraController:
             self.fr.update_frame(_frame)
             
         except CameraException as e:
-            raise CameraException(f"controler: {e}")
+            raise CameraException(e)
