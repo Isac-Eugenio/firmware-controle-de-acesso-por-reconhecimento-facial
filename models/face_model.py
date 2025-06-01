@@ -4,8 +4,8 @@ import numpy as np
 class FaceModel:
     def __init__(self):
         self.encoding = []
-        self.location = []
-
+        self.location = ()
+    
     @staticmethod
     def _encoding_string(encoding: list) -> str:
         try:

@@ -1,23 +1,26 @@
-# Base: exceção geral de câmera
 class CameraException(Exception):
     def __init__(self, message, details=None):
         self.details = details
+        self.message = message
         super().__init__(message)
 
-# Exceção para erros de valor (ex: resolução inválida, formato incorreto etc.)
+    def __str__(self):
+        return self.message
+
 class CameraValueError(CameraException):
     def __init__(self, message, details=None):
-        full_message = f"Camera valueError: {message}"
-        super().__init__(message, details)
+        full_message = f"CameraValueError: {message}"
+        super().__init__(full_message, details)
+        self.message = message
 
-# Exceção para falha de conexão com a câmera
 class CameraConnectionError(CameraException):
     def __init__(self, message, details=None):
-        full_message = f"Camera connectionError: {message}"
-        super().__init__(message, details)
+        full_message = f"CameraConnectionError: {message}"
+        super().__init__(full_message, details)
+        self.message = message
 
-# Exceção para erro de autenticação (ex: token inválido, permissão negada etc.)
 class CameraAuthError(CameraException):
     def __init__(self, message, details=None):
-        full_message = f"Camera authError {message}"
-        super().__init__(message, details)
+        full_message = f"CameraAuthError: {message}"
+        super().__init__(full_message, details)
+        self.message = message

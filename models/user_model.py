@@ -1,3 +1,6 @@
+from models.face_model import FaceModel
+
+
 class UserModel:
     def __init__(self):
         self.nome = ""
@@ -7,7 +10,8 @@ class UserModel:
         self.cpf = ""
         self.id = ""
         self._senha = ""
-
+        self._face_model = FaceModel()
+        
     def set_senha(self, senha):
         self._senha = senha
 

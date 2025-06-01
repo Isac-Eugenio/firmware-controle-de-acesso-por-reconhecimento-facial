@@ -1,8 +1,9 @@
-
+import face_recognition as fr
 import asyncio
 import cv2
 import numpy as np
 
+from controllers.face_controller import FaceController
 from models.camera_model import CameraModel
 from models.face_model import FaceModel 
 
@@ -54,12 +55,17 @@ _CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
 _CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
 
 
-modelo_teste = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
-repository_teste = CameraRepository(model=modelo_teste)
+camera_model = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
+camera_repository = CameraRepository(model=camera_model)
+
+face_model = FaceModel()
+
+face_controller = FaceController(camera_repository=camera_repository, face_model=FaceModel())
 
 def debug():
-   process =repository_teste.get_frame(_CONFIG_CAMERA_RESOLUTION, _CONFIG_CAMERA_FORMAT)
-   print(process)
+   process = face_controller.create_face_model()
+   print(process.to_map())
+   
 
 if __name__ == "__main__":
    debug()
