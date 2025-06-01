@@ -64,7 +64,7 @@ class FaceService:
         except FaceEncodingError:
             raise
     
-    def create_face_model(self) -> FaceModel:
+    def create_face_model(self) :
             try:
                 locations = self.get_face_locations()
                 if not locations:
@@ -72,8 +72,6 @@ class FaceService:
                 
                 self.face_model.location = locations[0]
                 self.face_model.encoding = self.get_first_face_encoding(self.face_model.location)
-                
-                return self.face_model
             
             except (FaceEncodingError, FaceLocationError):
                 raise 

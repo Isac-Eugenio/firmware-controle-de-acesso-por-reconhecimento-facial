@@ -3,12 +3,13 @@ import asyncio
 import cv2
 import numpy as np
 
-from controllers.face_controller import FaceController
+from services.face_service import FaceService
 from models.camera_model import CameraModel
 from models.face_model import FaceModel 
 
 from core.config.app_config import config
 from repository.camera_repository import CameraRepository
+from services.face_service import FaceService
 
 """ 
 api = ApiService()
@@ -59,13 +60,11 @@ camera_model = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
 camera_repository = CameraRepository(model=camera_model)
 
 face_model = FaceModel()
-
-face_controller = FaceController(camera_repository=camera_repository, face_model=FaceModel())
+face_controller = FaceService(camera_repository=camera_repository, face_model=face_model)
 
 def debug():
-   process = face_controller.create_face_model()
-   print(process.to_map())
-   
+    process = face_controller.create_face_model()
+    print(face_model.to_map())  
 
 if __name__ == "__main__":
    debug()
