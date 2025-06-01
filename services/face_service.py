@@ -11,7 +11,7 @@ _PORT_CAMERA = config["ports"]["camera"]
 _CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
 _CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
 
-class FaceController:
+class FaceService:
     def __init__(self, camera_repository: CameraRepository, face_model: FaceModel):
         self.camera_repository = camera_repository
         self.face_model = face_model

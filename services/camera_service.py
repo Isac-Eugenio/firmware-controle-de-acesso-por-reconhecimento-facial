@@ -9,7 +9,7 @@ _PORT_CAMERA = config["ports"]["camera"]
 _CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
 _CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
 
-class CameraController:
+class CameraService:
     def __init__(self):
         model = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
         self.camera_repository = CameraRepository(model)
