@@ -24,7 +24,7 @@ class QueryModel:
     def insert(self):
         try:
             if not isinstance(self.values, dict):
-                raise DatabaseQueryError("Values não é um Map (Obrigatório)")
+                raise DatabaseQueryError("values não é um Map (Obrigatório)")
             columns = ", ".join(self.values.keys())
 
             # Criar os placeholders nomeados (usando :coluna)
@@ -35,3 +35,19 @@ class QueryModel:
         
         except DatabaseException:
             raise
+
+    def delete(self):
+        """TODO: Precisar ser melhorado"""
+        try:
+            if self.condition is None:
+                raise DatabaseQueryError("para deletar algo precisa de uma condição (condition)")
+            self.query = f"DELETE FROM {self.table} WHERE {self.condition}"
+        
+        except DatabaseException:
+            raise
+
+    def update(self):
+        pass
+
+    def count(self):
+        pass

@@ -190,3 +190,90 @@ class DatabaseRepository:
             print("Banco de Dados já desconectado!")
             self.isconnected = {"log": "já desconectado do Banco de Dados", "status": False}
  """
+
+    async def delete(self, query: QueryModel):
+        try:
+            await self._ensure_connected()
+            query.delete()
+
+            result = await self._execute_query(query=query)
+
+            await self._disconnect()
+
+            return ResponseModel(
+                status=True,
+                log="Delete executado com sucesso",
+                data=result,
+                error=False
+            )
+
+        except DatabaseException as e:
+            await self._disconnect()
+            return ResponseModel(
+                status=True,
+                log="Erro ao executar DELETE",
+                details=e.details,
+                error=True
+            )
+
+        except Exception as e:
+            await self._disconnect()
+            raise DatabaseQueryError("Erro ao executar DELETE", details=str(e)) from e
+
+    async def update(self, query: QueryModel):
+        try:
+            await self._ensure_connected()
+            query.update()
+
+            result = await self._execute_query(query=query)
+
+            await self._disconnect()
+
+            return ResponseModel(
+                status=True,
+                log="Update executado com sucesso",
+                data=result,
+                error=False
+            )
+
+        except DatabaseException as e:
+            await self._disconnect()
+            return ResponseModel(
+                status=True,
+                log="Erro ao executar UPDATE",
+                details=e.details,
+                error=True
+            )
+
+        except Exception as e:
+            await self._disconnect()
+            raise DatabaseQueryError("Erro ao executar UPDATE", details=str(e)) from e
+
+    async def count(self, query: QueryModel):
+        try:
+            await self._ensure_connected()
+            query.count()
+
+            result = await self._execute_query(query=query, type_fetch="one")
+
+            await self._disconnect()
+
+            return ResponseModel(
+                status=True,
+                log="Contagem executada com sucesso",
+                data=result,
+                error=False
+            )
+
+        except DatabaseException as e:
+            await self._disconnect()
+            return ResponseModel(
+                status=True,
+                log="Erro ao executar COUNT",
+                details=e.details,
+                error=True
+            )
+
+        except Exception as e:
+            await self._disconnect()
+            raise DatabaseQueryError("Erro ao executar COUNT", details=str(e)) from e
