@@ -14,8 +14,6 @@ DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
 )
 
 
-
-
 class DatabaseRepository:
     def __init__(self, database_url=None, user_model: UserModel=None):
         self.model = user_model
@@ -30,27 +28,31 @@ class DatabaseRepository:
                 await self.database.connect()
                 self.isconnected = RepositoryResponse(status=True, log="Conexão ao DB bem-sucessida !")
             except Exception as e:
-                self.isconnected = RepositoryResponse(status=False, log="Erro ao conectar ao DB !")
-                raise DatabaseConnectionError(f"Erro ao conectar ao banco de dados: {e}")
+                self.isconnected = RepositoryResponse(status=False, log="Erro ao conectar ao DB !", error="Erro ao conectar ao DB !")
+                raise DatabaseConnectionError(f"Erro ao se Conectar ao DB !")
 
     async def _disconnect(self):
-        if self.isconnected["status"]:
+        if self.isconnected.status:
             try:
                 await self.database.disconnect()
-                self.isconnected = {"log": "Banco de Dados desconectado com sucesso", "status": False}
+                self.isconnected = RepositoryResponse(status=True, log="Desconexão ao DB bem-sucessida !")
             except Exception as e:
-                self.isconnected = {"log": f"erro ao desconectar do Banco de Dados: {e}", "status": False}
-                raise Exception(f"Erro ao desconectar do banco de dados: {e}")
+                self.isconnected =  RepositoryResponse(status=False, log="Erro ao Desconectar o DB !", error="Erro ao Desconectar o DB !")
+                raise DatabaseConnectionError("Erro ao Desconectar o TB")
         else:
-            self.isconnected = {"log": "já desconectado do Banco de Dados", "status": False}
+            self.isconnected =  RepositoryResponse(status=True, log="DB Já Desconectado !")
 
-    """  
-    
-    TODO: Manutenção -- Atualizando repositório
-    
+  
     async def _ensure_connected(self):
-        if not self.isconnected["status"]:
-            await self._connect()
+        if not self.isconnected.status:
+            try:
+                await self._connect()
+            
+            except DatabaseException:
+                raise
+
+            except Exception as e:
+                DatabaseConnectionError("Erro ao se Reconectar ao DB")
 
     async def _execute_query(self, query, values=None, type_fetch=None):
         try:
@@ -61,8 +63,11 @@ class DatabaseRepository:
             else:
                 return await self.database.execute(query=query, values=values)
         except Exception as e:
-            raise Exception(f"Erro de Query: {e}")
+            raise DatabaseQueryError(str(e))
+        
     
+    """  
+    TODO: Manutenção -- Atualizando repositório
     async def select_one(self, columns=None, condition=None, table: str = None, values=None):
         await self._ensure_connected()
 

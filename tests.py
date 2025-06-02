@@ -54,9 +54,10 @@ database_repository = DatabaseRepository(user_model=user_model)
 
 
 async def debug_async():
-   process = await database_repository._connect()
-   print(process)
-
+   await database_repository._ensure_connected()
+   print(database_repository.isconnected)
+   await database_repository._disconnect()
+    
 _HOST_CAMERA = config["hosts"]["camera"]
 _PORT_CAMERA = config["ports"]["camera"]
 _CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]

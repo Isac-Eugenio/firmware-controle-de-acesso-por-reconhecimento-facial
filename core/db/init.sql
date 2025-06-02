@@ -6,15 +6,17 @@ CREATE TABLE IF NOT EXISTS `dispositivos` (
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `usuarios` (
-    `cpf` VARCHAR(14) NOT NULL UNIQUE CHECK (`cpf` REGEXP '^[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2}$'),
+    `id` CHAR(8) NOT NULL UNIQUE,
     `nome` VARCHAR(100) NOT NULL,
     `alias` VARCHAR(11) NOT NULL,
+    `cpf` VARCHAR(14) NOT NULL UNIQUE CHECK (`cpf` REGEXP '^[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2}$'),
     `email` VARCHAR(255) UNIQUE NOT NULL CHECK (email REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'),  
     `matricula` VARCHAR(255),
     `senha` VARCHAR(9),
+    `icon_path` VARCHAR(255) DEFAULT NULL,
     `permission_level` ENUM('discente', 'docente', 'adminstrador') NOT NULL DEFAULT 'discente',
     `encodings` TEXT NOT NULL,
-    `id` CHAR(8) NOT NULL UNIQUE,
+   
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB;
 
@@ -68,8 +70,8 @@ END;
 DELIMITER ;
 
 -- Inserir usuário adminstrador root (com ID manual)
-INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, permission_level, encodings, id) 
-VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'adminstrador', '0,0,0,0', '00000001');
+INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, permission_level, encodings, id, icon_path) 
+VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'adminstrador', '0,0,0,0', '00000001', '');
 
 -- Dispositivo de teste
 INSERT INTO dispositivos (mac, local)
