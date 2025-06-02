@@ -3,6 +3,7 @@ import asyncio
 import cv2
 import numpy as np
 
+from core.utils.api_utils import ApiUtils
 from models.dataclass.response_model import ResponseModel
 from models.dataclass.query_model import QueryModel
 from models.user_model import UserModel
@@ -56,12 +57,26 @@ database_repository = DatabaseRepository()
 
 query_model = QueryModel(table="usuarios")
 
+utils = ApiUtils()
+
+query_model.values =  {
+        "cpf": "010.100.000-01",
+        "alias": "Isac",
+        "matricula": "0000000",
+        "email": "discente@gmail.com",
+        "nome": "teste1",
+        "permission_level": "discente",
+        "id": utils._generate_id(),
+        "encodings": "0,0,1,1"
+    }
+
+
 async def debug_async():
    
 
    await database_repository._ensure_connected()
    
-   process = await database_repository.select(query=query_model)
+   process = await database_repository.insert(query_model)
 
    await database_repository._disconnect()
    
@@ -79,9 +94,9 @@ camera_repository = CameraRepository(model=camera_model)
 face_model = FaceModel()
 face_controller = FaceService(camera_repository=camera_repository, face_model=face_model)
 
-
 def debug():
-    process = query_model.select()
+    
+    process = query_model.insert()
     print(query_model.query)  
 
 if __name__ == "__main__":

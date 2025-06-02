@@ -129,42 +129,30 @@ class DatabaseRepository:
         except Exception as e:
             await self._disconnect()
             raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
-    
+
+    async def insert(self, query: QueryModel):
+        try:
+            await self._ensure_connected()
+        
+            query.insert()
+
+            result = await self._execute_query(query=query)
+
+            await self._disconnect()
+
+            return ResponseModel(status=True, error=False, log="Query executada com Sucesso", data=result)
+        
+        except DatabaseException as e:
+            await self._disconnect()
+            return ResponseModel(status=True, error=True, log="Erro ao Executar Query",details=str(e))
+
+        except Exception as e:
+            await self._disconnect()
+            raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
+
+
     """  
     TODO: Manutenção -- Atualizando repositório
-
-    async def insert(self, table: str, data: dict):
-        await self._ensure_connected()
-
-        # Gerar as colunas a partir das chaves do dicionário 'data'
-        columns = ", ".join(data.keys())
-
-        # Criar os placeholders nomeados (usando :coluna)
-        placeholders = ", ".join([f":{key}" for key in data.keys()])
-
-        # Construção da query
-        query = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
-
-        # Passar o dicionário de dados como valores para os placeholders
-        values = data
-
-        try:
-            # Executando a consulta passando os dados como parâmetros
-            result = await self._execute_query(query=query, values=values)
-        except Exception as e:
-            result = None
-            Exception(e)
-
-        await self._disconnect()
-
-        return {
-            "log": self.isconnected,
-            "result": result,
-            "status": self.isquery(result),
-            "query": query
-        }
-
-
     async def delete(self, table: str, condition: str):
         await self._ensure_connected()
         query = f"DELETE FROM {table} WHERE {condition}"
