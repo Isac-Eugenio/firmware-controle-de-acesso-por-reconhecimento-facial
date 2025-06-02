@@ -3,6 +3,8 @@ import asyncio
 import cv2
 import numpy as np
 
+from models.dataclass.response_model import ResponseModel
+from models.dataclass.query_model import QueryModel
 from models.user_model import UserModel
 from repository.database_repository import DatabaseRepository
 from services.face_service import FaceService
@@ -50,13 +52,20 @@ async def debug_stream():
 
 
 user_model = UserModel()
-database_repository = DatabaseRepository(user_model=user_model)
+database_repository = DatabaseRepository()
 
+query_model = QueryModel(table="usuarios")
 
 async def debug_async():
+   
+
    await database_repository._ensure_connected()
-   print(database_repository.isconnected)
+
+   process = await database_repository.select_one(query=query_model)
+
    await database_repository._disconnect()
+
+   print(process)
     
 _HOST_CAMERA = config["hosts"]["camera"]
 _PORT_CAMERA = config["ports"]["camera"]
@@ -72,8 +81,8 @@ face_controller = FaceService(camera_repository=camera_repository, face_model=fa
 
 
 def debug():
-    process = face_controller.create_face_model()
-    print(face_model.to_map())  
+    process = query_model.select()
+    print(query_model.query)  
 
 if __name__ == "__main__":
    #debug()
