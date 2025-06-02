@@ -77,20 +77,22 @@ class DatabaseRepository:
     async def select_one(self, query: QueryModel):
         try:
             await self._ensure_connected()
-            query_sql = query.select()  # monta a SQL string
-            result = await self._execute_query(query=query_sql, type_fetch="one")
+            query.select()
+
+            result = await self._execute_query(query=query, type_fetch="one")
             await self._disconnect()
 
             return ResponseModel(
                 status=True,
                 log="Query executada com sucesso",
-                data=result
+                data=result,
+                error=False
             )
 
         except DatabaseException as e:
             await self._disconnect()
             return ResponseModel(
-                status=False,
+                status=True,
                 log="Erro ao se Comunicar ao DB",
                 details=e.details,
                 error=True
@@ -100,31 +102,36 @@ class DatabaseRepository:
             await self._disconnect()
             raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
 
+    async def select(self, query: QueryModel):
+        try:
+                await self._ensure_connected()
+                query.select()
+
+                result = await self._execute_query(query=query, type_fetch="all")
+                await self._disconnect()
+
+                return ResponseModel(
+                    status=True,
+                    log="Query executada com sucesso",
+                    data=result,
+                    error=False
+                )
+
+        except DatabaseException as e:
+            await self._disconnect()
+            return ResponseModel(
+                status=True,
+                log="Erro ao se Comunicar ao DB",
+                details=e.details,
+                error=True
+            )
+
+        except Exception as e:
+            await self._disconnect()
+            raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
+    
     """  
     TODO: Manutenção -- Atualizando repositório
-
-    async def select(self, columns=None, condition=None, table: str = None, values=None):
-        await self._ensure_connected()
-
-        if columns is None:
-            columns = "*"
-        else:
-            columns = ", ".join(columns)
-
-        query = f"SELECT {columns} FROM {table}"
-        if condition:
-            query += f" WHERE {condition}"
-
-        result = await self._execute_query(query=query, values=values, type_fetch="all")
-
-        await self._disconnect()
-
-        return {
-            "log": self.isconnected,
-            "result": result,
-            "status": self.isquery(result),
-            "query": query
-        }
 
     async def insert(self, table: str, data: dict):
         await self._ensure_connected()

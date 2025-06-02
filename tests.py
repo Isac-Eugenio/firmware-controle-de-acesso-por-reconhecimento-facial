@@ -60,11 +60,11 @@ async def debug_async():
    
 
    await database_repository._ensure_connected()
-
-   process = await database_repository.select_one(query=query_model)
+   
+   process = await database_repository.select(query=query_model)
 
    await database_repository._disconnect()
-
+   
    print(process)
     
 _HOST_CAMERA = config["hosts"]["camera"]
