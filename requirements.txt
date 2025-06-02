@@ -6,4 +6,5 @@ fastapi
 opencv-python
 databases
 aiomysql
+cryptography
 uvicorn

@@ -1,5 +1,9 @@
-from core.config.app_config import config
 from databases import Database as AsyncDatabase
+
+from core.errors.database_exception import *
+from .response_repository import RepositoryResponse
+from core.config.app_config import config
+from models.user_model import UserModel
 
 DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
     config["credentials"]["database"]["user"],
@@ -9,21 +13,25 @@ DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
     config["credentials"]["database"]["name"]
 )
 
+
+
+
 class DatabaseRepository:
-    def __init__(self, database_url=None):
+    def __init__(self, database_url=None, user_model: UserModel=None):
+        self.model = user_model
         self.database_url = database_url or DATABASE_URL
         self.database = AsyncDatabase(self.database_url)
-        self.isconnected = {"log": "ainda não conectado ao Banco de Dados", "status": False}
+        self.isconnected = RepositoryResponse(status=False, log="Banco ainda não conectado")
         self.isquery = lambda x: False if x is None else True
 
     async def _connect(self):
-        if not self.isconnected["status"]:
+        if not self.isconnected.status:
             try:
                 await self.database.connect()
-                self.isconnected = {"log": "conectado ao Banco de Dados", "status": True}
+                self.isconnected = RepositoryResponse(status=True, log="Conexão ao DB bem-sucessida !")
             except Exception as e:
-                self.isconnected = {"log": f"erro ao conectar ao Banco de Dados: {e}", "status": False}
-                raise Exception(f"Erro ao conectar ao banco de dados: {e}")
+                self.isconnected = RepositoryResponse(status=False, log="Erro ao conectar ao DB !")
+                raise DatabaseConnectionError(f"Erro ao conectar ao banco de dados: {e}")
 
     async def _disconnect(self):
         if self.isconnected["status"]:
@@ -36,6 +44,10 @@ class DatabaseRepository:
         else:
             self.isconnected = {"log": "já desconectado do Banco de Dados", "status": False}
 
+    """  
+    
+    TODO: Manutenção -- Atualizando repositório
+    
     async def _ensure_connected(self):
         if not self.isconnected["status"]:
             await self._connect()
@@ -166,3 +178,4 @@ class DatabaseRepository:
         else:
             print("Banco de Dados já desconectado!")
             self.isconnected = {"log": "já desconectado do Banco de Dados", "status": False}
+ """

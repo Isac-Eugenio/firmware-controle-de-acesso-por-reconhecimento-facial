@@ -3,6 +3,8 @@ import asyncio
 import cv2
 import numpy as np
 
+from models.user_model import UserModel
+from repository.database_repository import DatabaseRepository
 from services.face_service import FaceService
 from models.camera_model import CameraModel
 from models.face_model import FaceModel 
@@ -46,8 +48,14 @@ async def debug_stream():
     except Exception as e:
         print(f"data: Erro ao processar: {str(e)}\n\n")  """
 
+
+user_model = UserModel()
+database_repository = DatabaseRepository(user_model=user_model)
+
+
 async def debug_async():
-   pass
+   process = await database_repository._connect()
+   print(process)
 
 _HOST_CAMERA = config["hosts"]["camera"]
 _PORT_CAMERA = config["ports"]["camera"]
@@ -61,10 +69,13 @@ camera_repository = CameraRepository(model=camera_model)
 face_model = FaceModel()
 face_controller = FaceService(camera_repository=camera_repository, face_model=face_model)
 
+
 def debug():
     process = face_controller.create_face_model()
     print(face_model.to_map())  
 
 if __name__ == "__main__":
-   debug()
+   #debug()
+
+   asyncio.run(debug_async())
 
