@@ -46,7 +46,6 @@ async def debug_stream():
     except Exception as e:
         print(f"data: Erro ao processar: {str(e)}\n\n")  """
 
-
 async def debug_async():
    pass
 
