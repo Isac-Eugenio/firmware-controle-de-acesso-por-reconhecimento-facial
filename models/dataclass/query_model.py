@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import List, Any, Optional, Union
 
 from core.errors.database_exception import *
+from models.dataclass.query_model import *
+
 
 @dataclass
 class QueryModel:
@@ -37,17 +39,58 @@ class QueryModel:
             raise
 
     def delete(self):
-        """TODO: Precisar ser melhorado"""
+
         try:
-            if self.condition is None:
-                raise DatabaseQueryError("para deletar algo precisa de uma condição (condition)")
-            self.query = f"DELETE FROM {self.table} WHERE {self.condition}"
-        
+            if not self.values or not isinstance(self.values, dict):
+                raise DatabaseQueryError("Para deletar, forneça um dicionário de condições em 'values'.")
+            
+            conditions = [f"{key} = :{key}" for key in self.values.keys()]
+            where_clause = " AND ".join(conditions)
+            self.query = f"DELETE FROM {self.table} WHERE {where_clause}"
         except DatabaseException:
             raise
 
-    def update(self):
-        pass
+    def update(self, new_query: 'QueryModel'):
+        try:
+            if not self.values or not isinstance(self.values, dict):
+                raise DatabaseQueryError("Forneça um dicionário de condições em 'values' para a cláusula WHERE.")
+
+            if not new_query or not isinstance(new_query.values, dict):
+                raise DatabaseQueryError("Forneça um dicionário de dados a serem atualizados em 'new_query.values' para a cláusula SET.")
+
+            # Cria a parte SET do SQL com prefixo nos parâmetros para evitar colisão com WHERE
+            set_clause = ", ".join([f"{key} = :set_{key}" for key in new_query.values.keys()])
+
+            # Cria a parte WHERE da query usando os valores atuais
+            where_clause = " AND ".join([f"{key} = :{key}" for key in self.values.keys()])
+
+            # Monta a query final
+            self.query = f"UPDATE {self.table} SET {set_clause} WHERE {where_clause}"
+
+            # Junta os dicionários de parâmetros com prefixos distintos
+            new_values_prefixed = {f"set_{k}": v for k, v in new_query.values.items()}
+            condition_values = self.values  # já está no formato correto
+
+
+            self.values = {**new_values_prefixed, **condition_values}
+
+        except DatabaseException:
+            raise
 
     def count(self):
-        pass
+        try:
+            self.query = f"SELECT COUNT(*) as total FROM {self.table}"
+
+            where_parts = []
+
+            if self.values:
+                conditions = [f"{key} = :{key}" for key in self.values.keys()]
+                where_parts.extend(conditions)
+            elif self.condition:
+                where_parts.append(self.condition)
+
+            if where_parts:
+                self.query += " WHERE " + " AND ".join(where_parts)
+
+        except Exception as e:
+            raise DatabaseQueryError("Erro ao montar a query COUNT", details=str(e)) from e

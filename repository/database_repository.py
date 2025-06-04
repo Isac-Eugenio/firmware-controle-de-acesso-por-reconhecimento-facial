@@ -220,22 +220,41 @@ class DatabaseRepository:
             await self._disconnect()
             raise DatabaseQueryError("Erro ao executar DELETE", details=str(e)) from e
 
-    async def update(self, query: QueryModel):
+    async def update(self, query: QueryModel, new_query: QueryModel):
         try:
             await self._ensure_connected()
-            query.update()
+            query.update(new_query)
 
             result = await self._execute_query(query=query)
 
             await self._disconnect()
-
-            return ResponseModel(
-                status=True,
-                log="Update executado com sucesso",
-                data=result,
-                error=False
-            )
-
+            
+            match result:
+                case 1:
+                    return ResponseModel(
+                        status=True,
+                        log="Update executado com sucesso",
+                        data=result,
+                        error=False
+                    )
+                
+                case 0:
+                    return ResponseModel(
+                        status=True,
+                        log="Nenhum dado correspondente",
+                        data=result,
+                        error=False
+                    )
+                
+                case _:
+                     return ResponseModel(
+                        status=True,
+                        log="Mas de um dado Atualizado",
+                        data=result,
+                        error=False
+                    )
+        
+            
         except DatabaseException as e:
             await self._disconnect()
             return ResponseModel(

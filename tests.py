@@ -10,7 +10,7 @@ from models.user_model import UserModel
 from repository.database_repository import DatabaseRepository
 from services.face_service import FaceService
 from models.camera_model import CameraModel
-from models.face_model import FaceModel 
+from models.face_model import FaceModel
 
 from core.config.app_config import config
 from repository.camera_repository import CameraRepository
@@ -39,6 +39,7 @@ data = {
     }
 } """
 
+
 async def debug_stream():
     pass
     """ try:
@@ -59,29 +60,18 @@ query_model = QueryModel(table="usuarios")
 
 utils = ApiUtils()
 
-query_model.values =  {
-        "cpf": "010.100.000-01",
-        "alias": "Isac",
-        "matricula": "0000000",
-        "email": "discente@gmail.com",
-        "nome": "teste1",
-        "permission_level": "discente",
-        "id": utils._generate_id(),
-        "encodings": "0,0,1,1"
-    }
 
 
 async def debug_async():
-   
 
-   await database_repository._ensure_connected()
-   
-   process = await database_repository.insert(query_model)
+    await database_repository._ensure_connected()
+    process = await database_repository.count(query_model)
 
-   await database_repository._disconnect()
-   
-   print(process)
-    
+    await database_repository._disconnect()
+
+    print(dict(process.data))
+
+
 _HOST_CAMERA = config["hosts"]["camera"]
 _PORT_CAMERA = config["ports"]["camera"]
 _CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
@@ -92,15 +82,18 @@ camera_model = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
 camera_repository = CameraRepository(model=camera_model)
 
 face_model = FaceModel()
-face_controller = FaceService(camera_repository=camera_repository, face_model=face_model)
+face_controller = FaceService(
+    camera_repository=camera_repository, face_model=face_model
+)
+
 
 def debug():
-    
-    process = query_model.insert()
-    print(query_model.query)  
+   
+    process = query_model.select()
+    print(query_model.query)
+
 
 if __name__ == "__main__":
-   #debug()
+    #debug()
 
    asyncio.run(debug_async())
-
