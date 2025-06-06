@@ -99,3 +99,4 @@ class ApiService:
                 details=str(e),
                 data=None,
             )
+    
