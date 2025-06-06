@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import List, Any, Optional, Union
 
 from core.errors.database_exception import *
-from models.dataclass.query_model import *
+from models.query_model import *
 
 
 @dataclass

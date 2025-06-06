@@ -1,19 +1,26 @@
+from dataclasses import dataclass, field
+from typing import Optional
 from models.face_model import FaceModel
 
 
+@dataclass
 class UserModel:
-    def __init__(self):
-        self.nome = ""
-        self.email = ""
-        self.matricula = ""
-        self.alias = ""
-        self.cpf = ""
-        self.id = ""
-        self._senha = ""
-        self._face_model = FaceModel()
-        
-    def set_senha(self, senha):
-        self._senha = senha
+    nome: str = ""
+    email: str = ""
+    matricula: str = ""
+    alias: str = ""
+    cpf: str = ""
+    id: str = ""
+    _senha: str = field(default="", repr=False)
+    _face_model: FaceModel = field(default_factory=FaceModel)
+
+    @property
+    def senha(self):
+        raise AttributeError("A senha não pode ser acessada diretamente.")
+
+    @senha.setter
+    def senha(self, valor: str):
+        self._senha = valor
 
     def to_dict(self):
         return {
@@ -23,15 +30,14 @@ class UserModel:
             "alias": self.alias,
             "id": self.id,
         }
-    
 
-    def to_Model(self, data: dict):
-        novo_model = UserModel()
-        novo_model.nome = data.get("nome", "")
-        novo_model.email = data.get("email", "")
-        novo_model.matricula = data.get("matricula", "")
-        novo_model.alias = data.get("alias", "")
-        novo_model.id = data.get("id", "")
-        novo_model.set_senha(data.get("senha", ""))
-        
-        return novo_model
+    @classmethod
+    def from_dict(cls, data: dict) -> "UserModel":
+        obj = cls(
+            nome=data.get("nome", ""),
+            email=data.get("email", ""),
+            matricula=data.get("matricula", ""),
+            alias=data.get("alias", ""),
+            id=data.get("id", ""),
+        )
+        return obj
