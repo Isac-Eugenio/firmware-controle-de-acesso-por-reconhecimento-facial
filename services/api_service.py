@@ -10,11 +10,6 @@ from models.user_model import UserModel
 import numpy as np
 
 
-_ENCODING_COLUMN = _ENCODING_COLUMN = config["details"]["database"]["tables"]["perfis"][
-    "encoding_column"
-]
-_NAME_TABLE_PERFIS = config["details"]["database"]["tables"]["perfis"]["name"]
-_PUBLIC_COLUMNS_PERFIS = config["details"]["database"]["tables"]["perfis"]["columns"]
 
 
 class ApiService:
