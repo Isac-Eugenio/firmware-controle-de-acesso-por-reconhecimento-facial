@@ -6,12 +6,7 @@ from repository.database_repository import DatabaseRepository
 from services.api_service import ApiService
 from core.config.app_config import config
 from services.face_service import FaceService
-
-_HOST_CAMERA = config["hosts"]["camera"]
-_PORT_CAMERA = config["ports"]["camera"]
-_CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
-_CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
-
+from core.alias.alias_api import _HOST_CAMERA, _PORT_CAMERA
 
 camera_model = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
 camera_repository = CameraRepository(model=camera_model)

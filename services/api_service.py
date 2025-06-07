@@ -1,5 +1,6 @@
 from core.errors.api_exception import ApiDatabaseError
 from models.face_model import FaceModel
+from models.public_model import PublicUserModel
 from models.response_model import ResponseModel
 from repository.database_repository import DatabaseRepository
 from models.query_model import QueryModel
@@ -13,7 +14,7 @@ _ENCODING_COLUMN = _ENCODING_COLUMN = config["details"]["database"]["tables"]["p
     "encoding_column"
 ]
 _NAME_TABLE_PERFIS = config["details"]["database"]["tables"]["perfis"]["name"]
-_COLUMNS_TABLE_PERFIS = config["details"]["database"]["tables"]["perfis"]["columns"]
+_PUBLIC_COLUMNS_PERFIS = config["details"]["database"]["tables"]["perfis"]["columns"]
 
 
 class ApiService:
@@ -29,7 +30,7 @@ class ApiService:
             response = []
 
             query = QueryModel(table=_NAME_TABLE_PERFIS)
-            query.columns = _COLUMNS_TABLE_PERFIS.copy()
+            query.columns = _PUBLIC_COLUMNS_PERFIS.copy()
             query.columns.append(_ENCODING_COLUMN)
 
             result = await self.db_repository.select(query)
@@ -41,11 +42,10 @@ class ApiService:
                 row_dict = dict(row)
                 encoding_str = row_dict.pop(_ENCODING_COLUMN, "")
 
-                user_model = UserModel.from_dict(row_dict)
+                user_model = PublicUserModel.from_dict(row_dict)
 
                 if encoding_str:
-                    encoding_array = FaceModel._encoding_array(encoding_str)
-                    user_model._face_model = FaceModel(encoding=encoding_array)
+                    user_model._encoding = encoding_str  # Armazena internamente
 
                 response.append(user_model)
 
@@ -70,7 +70,7 @@ class ApiService:
             response = []
 
             query = QueryModel(table=_NAME_TABLE_PERFIS)
-            query.columns = _COLUMNS_TABLE_PERFIS.copy()
+            query.columns = _PUBLIC_COLUMNS_PERFIS.copy()
 
             result = await self.db_repository.select(query)
 
@@ -80,7 +80,7 @@ class ApiService:
             for row in result.data:
                 row_dict = dict(row)
 
-                user_model = UserModel.from_dict(row_dict)
+                user_model = PublicUserModel.from_dict(row_dict)
 
                 response.append(user_model)
 
@@ -99,4 +99,35 @@ class ApiService:
                 details=str(e),
                 data=None,
             )
-    
+
+    async def _insert_user(self, user_model: UserModel, face_model: FaceModel):
+        try:
+            user_dict = user_model.to_dict()
+            encoding_str = FaceModel._encoding_array(face_model.encoding)
+
+            user_dict[_ENCODING_COLUMN] = encoding_str
+
+            insert_model = QueryModel(
+                table=_NAME_TABLE_PERFIS,
+                columns=list(user_dict.keys()),
+                values=list(user_dict.values())
+            )
+
+            result = await self.db_repository.insert(insert_model)
+
+            if result.error:
+                raise ApiDatabaseError("Erro ao inserir usuário")
+
+            return ResponseModel(
+                log="Usuário inserido com sucesso",
+                status=True,
+                error=False
+            )
+
+        except Exception as e:
+            return ResponseModel(
+                log="Erro ao inserir usuário",
+                error=True,
+                status=True,
+                details=str(e)
+            )

@@ -4,11 +4,6 @@ from models.camera_model import CameraModel
 from repository.camera_repository import CameraRepository
 from services.face_service import FaceUtils
 
-_HOST_CAMERA = config["hosts"]["camera"]
-_PORT_CAMERA = config["ports"]["camera"]
-_CONFIG_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
-_CONFIG_CAMERA_FORMAT = config["details"]["camera"]["format"]
-
 class CameraService:
     def __init__(self):
         model = CameraModel(_HOST_CAMERA, _PORT_CAMERA)
