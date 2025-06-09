@@ -80,7 +80,3 @@ class BaseUserModel(BaseModel):
         elif not isinstance(pl, PermissionLevel):
             raise ModelValueError(f"permission_level inválido: {pl}")
         return values
-
-    class Config:
-        underscore_attrs_are_private = True
-        allow_mutation = True
