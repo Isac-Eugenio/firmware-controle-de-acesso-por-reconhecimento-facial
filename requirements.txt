@@ -10,3 +10,5 @@ cryptography
 uvicorn
 pyyaml
 pydantic
+bcrypt
+passlib
