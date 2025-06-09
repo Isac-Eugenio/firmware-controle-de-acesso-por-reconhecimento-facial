@@ -4,7 +4,7 @@ from core.errors.database_exception import *
 from models.query_model import QueryModel
 from models.response_model import ResponseModel
 from core.config.app_config import config
-from models.user_model import UserModel
+from models.baseuser_model import UserModel
 
 DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
     config["credentials"]["database"]["user"],

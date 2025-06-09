@@ -6,7 +6,7 @@ from repository.database_repository import DatabaseRepository
 from models.query_model import QueryModel
 from services.face_service import FaceService
 from core.config.app_config import config
-from models.user_model import UserModel
+from models.baseuser_model import UserModel
 import numpy as np
 
 

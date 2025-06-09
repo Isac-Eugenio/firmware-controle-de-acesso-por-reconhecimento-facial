@@ -9,3 +9,4 @@ aiomysql
 cryptography
 uvicorn
 pyyaml
+pydantic
