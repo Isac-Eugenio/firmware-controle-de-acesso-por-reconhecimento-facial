@@ -9,8 +9,4 @@ class LoginModel(BaseUserModel):
       return self.email
 
    def get_senha(self) -> str:
-      print(self._get_senha())
-      return self._get_senha() 
-   
-   def teste(self, v: str):
-      return True if self._get_senha() == "123456" else False
+      print(self.senha)

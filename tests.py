@@ -3,6 +3,7 @@ from core.config.app_config import load_config
 from models.baseuser_model import BaseUserModel, PermissionLevel
 from models.login_model import LoginModel
 
+
 async def debug_async():
     pass
 
@@ -12,21 +13,25 @@ async def debug_stream():
 
 
 def debug():
-    # Simulando o form_data
-    form_data = {
+    data = {
         "email": "isac@exemplo.com",
         "senha": "123456789",
     }
 
-    # Cria o login model com validação para o campo email
+    user = LoginModel.model_validate(data)
+
+    print(user.email)  # isac@exemplo.com
+
+    # Tentar acessar a senha direto lança erro
     try:
-        login = LoginModel.model_validate(form_data)
-    except ValidationError as e:
-        print("Erro de validação:", e)
-        exit(1)
+        print(user.senha)
+    except Exception as e:
+        print(e)  # A senha não pode ser acessada diretamente.
 
-    print(login.model_dump_json())
+    # Verificar senha correta
+    print(user.verificar_senha("123456789"))  # True
+    print(user.verificar_senha("errada"))  # False
 
-   
+
 if __name__ == "__main__":
     debug()

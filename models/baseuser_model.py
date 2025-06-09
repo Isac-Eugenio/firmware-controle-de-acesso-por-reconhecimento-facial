@@ -62,7 +62,14 @@ class BaseUserModel(BaseModel):
         elif not isinstance(pl, PermissionLevel):
             raise ModelValueError(f"permission_level inválido: {pl}")
         return values
-
+    
+    @classmethod
+    def model_validate(cls, data: dict):
+        senha = data.pop("senha")
+        obj = super().model_validate(data)
+        obj._senha_hash = bcrypt.hash(senha)
+        return obj
+    
     @property
     def senha(self):
         # só quem herda pode acessar o hash
@@ -75,10 +82,8 @@ class BaseUserModel(BaseModel):
             return self._senha_hash
         raise ModelAttributeError("A senha não pode ser acessada diretamente.")
 
-    def verificar_senha(self, senha_texto: str) -> bool:
-        if not self._senha_hash:
-            return False
-        return bcrypt.verify(senha_texto, self._senha_hash)
+    def verificar_senha(self, senha: str) -> bool:
+        return bcrypt.verify(senha, self._senha_hash)
     
     # Email Setter seguro
     def set_email(self, email: str) -> None:
