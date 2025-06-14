@@ -25,16 +25,6 @@ error() {
     echo -e "${RED}[ERRO]${NC} $1" | tee -a "$ERRORLOG" >&2
 }
 
-# Função de execução com log
-run() {
-    log "$1"
-    bash -c "$1" >>"$LOGFILE" 2>>"$ERRORLOG"
-    if [ $? -ne 0 ]; then
-        error "Falha ao executar: $1"
-        exit 1
-    fi
-}
-
 # Spinner para loading visual
 spinner() {
     local pid=$1
@@ -50,19 +40,35 @@ spinner() {
     printf "\b"
 }
 
+# Função para rodar comando com spinner
+run_spinner() {
+    log "$1"
+    bash -c "$1" >>"$LOGFILE" 2>>"$ERRORLOG" &
+    pid=$!
+    spinner $pid
+    wait $pid
+    status=$?
+    if [ $status -ne 0 ]; then
+        error "Falha ao executar: $1"
+        exit 1
+    fi
+}
+
 log "Iniciando instalação de dependências do sistema..."
-run "sudo apt update"
-run "sudo apt upgrade -y"
-run "sudo apt install python3-venv"
-run "sudo apt install -y build-essential cmake python3-dev python3-pip libopenblas-dev libboost-all-dev libx11-dev libjpeg-dev libpng-dev"
+
+run_spinner "sudo apt update"
+run_spinner "sudo apt upgrade -y"
+run_spinner "sudo apt install -y python3-venv"
+run_spinner "sudo apt install -y build-essential cmake python3-dev python3-pip libopenblas-dev libboost-all-dev libx11-dev libjpeg-dev libpng-dev"
 
 log "Criando ambiente virtual..."
-run "python3 -m venv .venv"
-run "source .venv/bin/activate && pip install --upgrade pip"
+run_spinner "python3 -m venv .venv"
+
+log "Atualizando pip dentro do ambiente virtual..."
+run_spinner "source .venv/bin/activate && pip install --upgrade pip"
 
 log "⚙️ Instalando dependências Python (compilação do dlib pode demorar alguns minutos)..."
-
-# Instalação com spinner e saída oculta na tela, mas salva logs
+# Rodando pip install com source no subshell para garantir venv ativado
 bash -c "source .venv/bin/activate && pip install -r requirements.txt" >>"$LOGFILE" 2>>"$ERRORLOG" &
 pid=$!
 spinner $pid
