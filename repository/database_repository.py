@@ -4,10 +4,9 @@ from core.errors.database_exception import *
 from models.query_model import QueryModel
 from models.response_model import ResponseModel
 from core.config.app_config import DatabaseConfig as db
-from models.baseuser_model import UserModel
 
 DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
-    db.USER, db.PASSWORD, db.HOST, db.PORT, db.DB
+    db.user, db.password, db.host, db.port, db.name
 )
 
 

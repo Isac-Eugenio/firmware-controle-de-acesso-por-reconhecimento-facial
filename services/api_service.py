@@ -1,12 +1,14 @@
 from core.errors.api_exception import ApiDatabaseError
 from models.face_model import FaceModel
+from models.login_model import LoginModel
 from models.response_model import ResponseModel
 from repository.database_repository import DatabaseRepository
 from models.query_model import QueryModel
 from services.face_service import FaceService
 from core.config.app_config import *
-from models.baseuser_model import UserModel
+from models.user_model import UserModel
 import numpy as np
+
 
 class ApiService:
     def __init__(
@@ -14,18 +16,14 @@ class ApiService:
     ):
         self.face_service = face_service
         self.db_repository = database_repository
-        self._model = QueryModel(table= DatabaseTables.PERFIS)
+        self._model = QueryModel(table=DatabaseTables.perfis)
+        self.perfil_columns = PerfisColumns()
 
-    """ 
-    TODO: Manutenção
-    
     async def _load_users_with_encodings(self):
         try:
             response = []
-
-            query = QueryModel(table=_NAME_TABLE_PERFIS)
-            query.columns = _PUBLIC_COLUMNS_PERFIS.copy()
-            query.columns.append(_ENCODING_COLUMN)
+            query = QueryModel(table=DatabaseTables.perfis)
+            query.columns = self.perfil_columns.full_columns
 
             result = await self.db_repository.select(query)
 
@@ -34,14 +32,16 @@ class ApiService:
 
             for row in result.data:
                 row_dict = dict(row)
-                encoding_str = row_dict.pop(_ENCODING_COLUMN, "")
 
-                user_model = PublicUserModel.from_dict(row_dict)
+                # Extrai e define encoding separadamente
+                encoding_str = row_dict.pop(self.perfil_columns.encoding, "")
+                model = UserModel()
+                model.set_encoding(encoding_str)
 
-                if encoding_str:
-                    user_model._encoding = encoding_str  # Armazena internamente
+                # Valida os demais dados
+                model = UserModel.model_validate(row_dict)
 
-                response.append(user_model)
+                response.append(model)
 
             return ResponseModel(
                 log="Perfis carregados com sucesso",
@@ -62,9 +62,12 @@ class ApiService:
     async def _load_users(self):
         try:
             response = []
+            query = QueryModel(table=DatabaseTables.perfis)
 
-            query = QueryModel(table=_NAME_TABLE_PERFIS)
-            query.columns = _PUBLIC_COLUMNS_PERFIS.copy()
+            # Define apenas as colunas que não envolvem encoding
+            query.columns = (
+                self.perfil_columns.private
+            )  # ou .public, dependendo da lógica
 
             result = await self.db_repository.select(query)
 
@@ -74,12 +77,13 @@ class ApiService:
             for row in result.data:
                 row_dict = dict(row)
 
-                user_model = PublicUserModel.from_dict(row_dict)
+                # Valida e instancia o modelo sem encoding
+                model = UserModel.model_validate(row_dict)
 
-                response.append(user_model)
+                response.append(model)
 
             return ResponseModel(
-                log="Perfis carregados com sucesso",
+                log="Perfis carregados com sucesso (sem encoding)",
                 status=True,
                 error=False,
                 data=response,
@@ -87,13 +91,15 @@ class ApiService:
 
         except Exception as e:
             return ResponseModel(
-                log="Erro ao carregar perfis",
+                log="Erro ao carregar perfis (sem encoding)",
                 error=True,
                 status=True,
                 details=str(e),
                 data=None,
             )
 
+    """ 
+    TODO: Manutenção
     async def _insert_user(self, user_model: UserModel, face_model: FaceModel):
         try:
             user_dict = user_model.to_dict()

@@ -15,11 +15,18 @@ credentials:
 details:
   database:
     tables:
-      perfis: "usuarios"
+      perfis:
+        name: "usuarios"
+        columns:
+          password: "senha"
+          encoding: "encodings"
+          others:
+            - "id"
+            - "alias"
+            - "email"
+            - "icon_path"
+            - "permission_level"
+          
       historico: "historico"
       dispositivos: "dispositivos"
     
-    columns:
-      perfis:
-        nome: "nome"
-        

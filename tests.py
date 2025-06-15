@@ -1,11 +1,35 @@
+import asyncio
 from pydantic import ValidationError
-from core.config.app_config import load_config
+from core.config.app_config import CameraConfig as Camera, DatabaseConfig, DatabaseTables, PerfisColumns
 from models.baseuser_model import BaseUserModel, PermissionLevel
+from models.face_model import FaceModel
 from models.login_model import LoginModel
+from models.camera_model import CameraModel
+from models.query_model import QueryModel
+from models.response_model import ResponseModel
+from models.user_model import UserModel
+from repository.camera_repository import CameraRepository
+from repository.database_repository import DatabaseRepository, DATABASE_URL
+from services.api_service import ApiService
+from services.face_service import FaceService
 
+
+
+def _encoding_teste():
+    zeros_float_str = ",".join(["0.1"] * 128)
+    return zeros_float_str
 
 async def debug_async():
-    pass
+    camera_rep = CameraRepository(Camera)
+    db_rep = DatabaseRepository()
+    face_model = FaceModel()
+    face_service = FaceService(camera_rep, face_model)
+    api = ApiService(face_service, db_rep)
+    
+    response = await api._load_users()
+    data = response.data
+    for i in data:
+        print(i.model_dump())
 
 
 async def debug_stream():
@@ -13,25 +37,9 @@ async def debug_stream():
 
 
 def debug():
-    data = {
-        "email": "isac@exemplo.com",
-        "senha": "123456789",
-    }
-
-    user = LoginModel.model_validate(data)
-
-    print(user.email)  # isac@exemplo.com
-
-    # Tentar acessar a senha direto lança erro
-    try:
-        print(user.senha)
-    except Exception as e:
-        print(e)  # A senha não pode ser acessada diretamente.
-
-    # Verificar senha correta
-    print(user.verificar_senha("123456789"))  # True
-    print(user.verificar_senha("errada"))  # False
+    print(PerfisColumns().full_columns)
 
 
 if __name__ == "__main__":
-    debug()
+
+    asyncio.run(debug_async())

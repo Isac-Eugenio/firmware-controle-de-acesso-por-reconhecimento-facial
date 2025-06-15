@@ -1,68 +1,95 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, Literal
 import yaml
-from enum import Enum
 
+
+# Carrega configurações do YAML
 def load_config(path="core/config/config.yaml"):
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
+
 config = load_config()
 
-# Enums opcionais (caso queira manter validações)
-class CameraFormat(Enum):
-    JPG = "JPG"
-    PNG = "PNG"
-    BMP = "BMP"
-
-class CameraResolution(Enum):
-    RES_800x600 = "800x600"
-    RES_1024x768 = "1024x768"
-    RES_1280x720 = "1280x720"
+# Tipos fixos (substituindo Enum)
+CameraFormat = Literal["jpg", "bmp", "mjpeg"]
+CameraResolution = Literal[
+    "96x96",
+    "160x120",
+    "176x144",
+    "240x176",
+    "240x240",
+    "320x240",
+    "400x296",
+    "480x320",
+    "640x480",
+    "800x600",
+    "1024x768",
+    "1280x720",
+    "1280x1024",
+    "1600x1200",
+]
 
 
 @dataclass
-class CameraConfig(Enum):
-    HOST: str = config["hosts"]["camera"]
-    PORT: int = config["ports"]["camera"]
-    RES_DEFAULT : CameraResolution = CameraResolution.RES_800x600
-    FOMART_DEFAULT: CameraFormat = CameraFormat.JPG
-    CUSTOM_HOST: str = f"http://{HOST}:{PORT}/{RES_DEFAULT}.{FOMART_DEFAULT}"
+class CameraConfig:
+    host: str = config["hosts"]["camera"]
+    port: int = config["ports"]["camera"]
+    resolution: CameraResolution = "800x600"
+    format: CameraFormat = "jpg"
+
+    @property
+    def custom_host(self) -> str:
+        return f"http://{self.host}:{self.port}/{self.resolution}.{self.format}"
+
 
 @dataclass
-class CameraConfig(Enum):
-    HOST: str = config["hosts"]["camera"]
-    PORT: int = config["ports"]["camera"]
-    RES_DEFAULT: CameraResolution = CameraResolution.RES_800x600
-    FOMART_DEFAULT: CameraFormat = CameraFormat.JPG
-    CUSTOM_HOST: str = f"http://{HOST}:{PORT}/{RES_DEFAULT}.{FOMART_DEFAULT}"
+class DatabaseConfig:
+    host: str = config["hosts"]["database"]
+    port: int = config["ports"]["database"]
+    user: str = config["credentials"]["database"]["user"]
+    password: str = config["credentials"]["database"]["password"]
+    name: str = config["credentials"]["database"]["name"]
 
 
-class DatabaseConfig(Enum):
-    HOST = config["hosts"]["database"]
-    PORT = config["ports"]["database"]
-    USER = config["credentials"]["database"]["user"]
-    PASSWORD = config["credentials"]["database"]["password"]
-    DB = config["credentials"]["database"]["name"]
+@dataclass
+class DatabaseTables:
+    perfis: str = config["details"]["database"]["tables"]["perfis"]["name"]
+    dispositivos: str = config["details"]["database"]["tables"]["dispositivos"]
+    historico: str = config["details"]["database"]["tables"]["historico"]
 
 
-class DatabaseTables(Enum):
-    PERFIS = config["details"]["database"]["perfis"]
-    DEVICES = config["details"]["database"]["dispositivos"]
-    HISTORIC = config["details"]["database"]["historico"]
+from dataclasses import dataclass, field
+from typing import List
 
-class DatabaseColumns(Enum):
-    pass
 
-# Constantes de configuração
-_HOST_CAMERA = config["hosts"]["camera"]
-_HOST_DATABASE = config["hosts"]["database"]
+@dataclass
+class PerfisColumns:
+    public: List[str] = field(
+        default_factory=lambda: config["details"]["database"]["tables"]["perfis"][
+            "columns"
+        ]["others"]
+    )
+    private: List[str] = field(
+        default_factory=lambda: config["details"]["database"]["tables"]["perfis"][
+            "columns"
+        ]["others"]
+        + [config["details"]["database"]["tables"]["perfis"]["columns"]["password"]]
+    )
+    encoding: str = field(
+        default_factory=lambda: config["details"]["database"]["tables"]["perfis"][
+            "columns"
+        ]["encoding"]
+    )
 
-_PORT_CAMERA = config["ports"]["camera"]
-_PORT_DATABASE = config["ports"]["database"]
+    password: str = field(
+        default_factory=lambda: config["details"]["database"]["tables"]["perfis"][
+            "columns"
+        ]["password"]
+    )
 
-_DATABASE_USER = config["credentials"]["database"]["user"]
-_DATABASE_PASSWORD = config["credentials"]["database"]["password"]
-_DATABASE_NAME = config["credentials"]["database"]["name"]
-
-_CAMERA_RESOLUTION = config["details"]["camera"]["resolution"]
-_CAMERA_FORMAT = config["details"]["camera"]["format"]
+    @property
+    def full_columns(self) -> List[str]:
+        return self.private + [self.encoding]
+    
+    

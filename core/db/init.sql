@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
     `matricula` VARCHAR(255),
     `senha` VARCHAR(9),
     `icon_path` VARCHAR(255) DEFAULT NULL,
-    `permission_level` ENUM('discente', 'docente', 'adminstrador') NOT NULL DEFAULT 'discente',
+    `permission_level` ENUM('discente', 'docente', 'administrador') NOT NULL DEFAULT 'discente',
     `encodings` TEXT NOT NULL,
    
     PRIMARY KEY (`id`)
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `historico` (
     `cpf` VARCHAR(14) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `matricula` VARCHAR(255),
-    `permission_level` ENUM('discente', 'docente', 'adminstrador') NOT NULL DEFAULT 'discente',  
+    `permission_level` ENUM('discente', 'docente', 'administrador') NOT NULL DEFAULT 'discente',  
     `mac` VARCHAR(20) DEFAULT NULL,  
     `ip` VARCHAR(15) NOT NULL,  
     `local` VARCHAR(100) DEFAULT NULL,  
@@ -54,24 +54,24 @@ CREATE TRIGGER before_update_usuarios
 BEFORE UPDATE ON usuarios
 FOR EACH ROW
 BEGIN
-    IF NEW.permission_level = 'adminstrador' THEN
+    IF NEW.permission_level = 'administrador' THEN
         IF NEW.senha IS NULL OR NEW.senha = '' THEN
             SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Usuários com permission_level = adminstrador devem ter uma senha.';
+            SET MESSAGE_TEXT = 'Usuários com permission_level = administrador devem ter uma senha.';
         END IF;
     ELSE
         IF NEW.senha IS NOT NULL AND NEW.senha <> '' THEN
             SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Apenas usuários adminstradores podem ter senha.';
+            SET MESSAGE_TEXT = 'Apenas usuários administradores podem ter senha.';
         END IF;
     END IF;
 END;
 //
 DELIMITER ;
 
--- Inserir usuário adminstrador root (com ID manual)
+-- Inserir usuário administrador root (com ID manual)
 INSERT INTO usuarios (cpf, nome, alias, email, matricula, senha, permission_level, encodings, id, icon_path) 
-VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'adminstrador', '0,0,0,0', '00000001', '');
+VALUES ('000.000.000-00', 'root', 'root', 'root.debug@gmail.com', '123456', '@Isac1998', 'administrador', '0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0', '00000001', '');
 
 -- Dispositivo de teste
 INSERT INTO dispositivos (mac, local)
