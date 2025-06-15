@@ -13,6 +13,13 @@ credentials:
     name: "debug"
 
 details:
-  camera:
-    resolution: "800x600"
-    format: "JPG"
+  database:
+    tables:
+      perfis: "usuarios"
+      historico: "historico"
+      dispositivos: "dispositivos"
+    
+    columns:
+      perfis:
+        nome: "nome"
+        

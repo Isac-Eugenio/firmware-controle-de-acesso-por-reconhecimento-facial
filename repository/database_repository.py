@@ -3,15 +3,11 @@ from databases import Database as AsyncDatabase
 from core.errors.database_exception import *
 from models.query_model import QueryModel
 from models.response_model import ResponseModel
-from core.config.app_config import config
+from core.config.app_config import DatabaseConfig as db
 from models.baseuser_model import UserModel
 
 DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
-    config["credentials"]["database"]["user"],
-    config["credentials"]["database"]["password"],
-    config["hosts"]["database"],
-    config["ports"]["database"],
-    config["credentials"]["database"]["name"],
+    db.USER, db.PASSWORD, db.HOST, db.PORT, db.DB
 )
 
 

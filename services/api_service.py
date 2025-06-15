@@ -1,16 +1,12 @@
 from core.errors.api_exception import ApiDatabaseError
 from models.face_model import FaceModel
-from models.public_model import PublicUserModel
 from models.response_model import ResponseModel
 from repository.database_repository import DatabaseRepository
 from models.query_model import QueryModel
 from services.face_service import FaceService
-from core.config.app_config import config
+from core.config.app_config import *
 from models.baseuser_model import UserModel
 import numpy as np
-
-
-
 
 class ApiService:
     def __init__(
@@ -18,8 +14,11 @@ class ApiService:
     ):
         self.face_service = face_service
         self.db_repository = database_repository
-        self._model = QueryModel(table=_NAME_TABLE_PERFIS)
+        self._model = QueryModel(table= DatabaseTables.PERFIS)
 
+    """ 
+    TODO: Manutenção
+    
     async def _load_users_with_encodings(self):
         try:
             response = []
@@ -125,4 +124,4 @@ class ApiService:
                 error=True,
                 status=True,
                 details=str(e)
-            )
+            ) """
