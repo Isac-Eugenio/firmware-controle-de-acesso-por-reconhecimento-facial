@@ -67,8 +67,7 @@ run_spinner "python3 -m venv .venv"
 log "Atualizando pip dentro do ambiente virtual..."
 run_spinner "source .venv/bin/activate && pip install --upgrade pip"
 
-log "⚙️ Instalando dependências Python (compilação do dlib pode demorar alguns minutos)..."
-# Rodando pip install com source no subshell para garantir venv ativado
+log "⚙️  Instalando dependências Python (compilação do dlib pode demorar alguns minutos)..."
 bash -c "source .venv/bin/activate && pip install -r requirements.txt" >>"$LOGFILE" 2>>"$ERRORLOG" &
 pid=$!
 spinner $pid
@@ -79,5 +78,8 @@ if [ $status -ne 0 ]; then
     exit 1
 fi
 
-log "Build concluído com sucesso!"
-echo -e "${GREEN}[✓] Ambiente configurado com sucesso!${NC}"
+log "🐳 Subindo banco de dados do projeto com Docker Compose..."
+run_spinner "docker compose up -d"
+
+log "Todos os serviços foram iniciados com sucesso!"
+echo -e "${GREEN}[✓] Build finalizado e banco de dados iniciado via Docker Compose!${NC}"
