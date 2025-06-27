@@ -109,8 +109,6 @@ class ApiService:
             )
 
             query.insert()
-            print(query)
-            
             result = await self.db_repository.insert(query)
 
             if result.error:

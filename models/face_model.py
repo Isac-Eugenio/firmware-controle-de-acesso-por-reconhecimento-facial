@@ -11,7 +11,7 @@ class FaceModel(BaseModel):
         arbitrary_types_allowed=True,  # para aceitar np.ndarray
     )
 
-    @field_validator("encoding", mode="before")
+    @field_validator("encodings", mode="before")
     @classmethod
     def validate_encoding(cls, v):
         if isinstance(v, str):
