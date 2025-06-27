@@ -16,6 +16,8 @@ class ApiController:
 
     async def login(self, user_model: UserModel):
         try:
+            user_model.permission_level = "administrador"
+
             yield ResponseModel(status=False, error=False, log="Verificando Login")
 
             task = await self.api_service._count_user(user_model)
@@ -36,14 +38,14 @@ class ApiController:
                     status=True,
                     error=False,
                     log="Login bem-sucedido",
-                    data=response_dict,
+                    data=True,
                 )
             else:
                 yield ResponseModel(
                     status=True,
                     error=False,
                     log="Email ou senha incorretos !",
-                    data=response_dict,
+                    data=False,
                 )
 
             return
@@ -106,6 +108,37 @@ class ApiController:
                 status=True,
                 error=True,
                 log="Erro ao processar registro",
+                details=str(e),
+            )
+            return
+
+    async def load_table_user(self):
+        try:
+            yield ResponseModel(status=False, error=False, log="Carregando Tabela")
+            task = await self.api_service._load_users()
+
+            if task.error:
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="Erro ao  Carregar tabela",
+                    details=task.details,
+                )
+                return
+
+            yield ResponseModel(
+                status=True,
+                error=False,
+                log="Tabela Carregada com Sucesso",
+                data=task.data,
+            )
+            return
+
+        except (Exception, ValueError) as e:
+            yield ResponseModel(
+                status=True,
+                error=True,
+                log="Erro ao Carregar Tabela",
                 details=str(e),
             )
             return

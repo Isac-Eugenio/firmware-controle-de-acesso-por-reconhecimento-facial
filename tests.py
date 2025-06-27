@@ -51,18 +51,16 @@ async def debug_async():
 
 
 async def debug_stream():
-    model = UserModel.model_validate(admin_user)
-    
-    print("Iniciando teste de register...\n")
+    #model = UserModel.model_validate(admin_user)
 
-    # Roda o método login e imprime os yields
-    async for resposta in api_controller.register_user(model):
-        print("Resposta:")
-        resposta = resposta.model_dump()
+    async for resposta in api_controller.load_table_user():
+        res = resposta.data
+        if res is None:
+            continue
+        
+        print(res)
 
-        for k, v in resposta.items():
-            print(f"  {k}: {v}")
-        print("-" * 30)
+        
 
 
 def debug():

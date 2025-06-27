@@ -1,7 +1,6 @@
 from core.errors.api_exception import ApiDatabaseError
 from core.utils.api_utils import ApiUtils
 from models.face_model import FaceModel
-from models.login_model import LoginModel
 from models.response_model import ResponseModel
 from repository.database_repository import DatabaseRepository
 from models.query_model import QueryModel
