@@ -93,11 +93,6 @@ class BaseUserModel(BaseModel):
         # Compara com a senha armazenada
         return senha.lower() == (self.senha or "").lower()
 
-
-    @property
-    def encodings(self) -> Optional[np.ndarray]:
-        return self._face_model.encodings
-
     def set_encoding(self, encoding: Union[str, np.ndarray, List[float]]) -> None:
         if isinstance(encoding, str):
             encoding = self._face_model._encoding_array(encoding)

@@ -100,12 +100,12 @@ class ApiService:
 
     async def _insert_user(self, user_model: UserModel):
         try:
-            user_dict = user_model.model_dump()
-            print(user_dict)
+            model_dict = user_model.model_dump()
+            print(model_dict)
 
             query = QueryModel(
                 table=DatabaseTables.perfis,
-                values=user_dict,
+                values=model_dict,
             )
 
             result = await self.db_repository.insert(query)
@@ -129,11 +129,20 @@ class ApiService:
 
     async def _update_user(self, user_model: UserModel, new_model: UserModel):
         try:
-            user_dict = new_model.model_dump()
-            new_model = user_model.model_dump()
+            def limpar_dict(d: dict) -> dict:
+                return {
+                    k: v for k, v in d.items()
+                    if v not in ("", None, [], {})
+                }
 
-            query = QueryModel(table=DatabaseTables.perfis, values=user_dict)
-            new_query = QueryModel(table=DatabaseTables.perfis, values=new_model)
+            model_dict = limpar_dict(user_model.model_dump())
+            new_model_dict = limpar_dict(new_model.model_dump())
+
+            print("Filtro (WHERE):", model_dict)
+            print("Novos valores (SET):", new_model_dict)
+
+            query = QueryModel(table=DatabaseTables.perfis, values=model_dict)
+            new_query = QueryModel(table=DatabaseTables.perfis, values=new_model_dict)
 
             result = await self.db_repository.update(query, new_query)
 

@@ -188,7 +188,7 @@ class DatabaseRepository:
         try:
             await self._ensure_connected()
             query.update(new_query)
-
+            print(query.query)
             result = await self._execute_query(query=query)
 
             await self._disconnect()

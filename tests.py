@@ -23,23 +23,10 @@ def _encoding_teste(float_value: float) -> str:
 api_utils = ApiUtils()
 
 admin_user = {
-    "nome": "Joao da Silva",
-    "alias": "Joao",
-    "cpf": "122.222.222-21",
-    "email": "joao@example.com",
-    "matricula": None,
-    "icon_path": None,
-    "permission_level": "discente",
-    # encodings está ausente
+  "id":"77543246"
 }
 teste_user = {
-    "nome": "Joao da Silva",
-    "alias": "Joao",
-    "cpf": "122.222.222-21",
-    "email": "joao@example.com",
-    "matricula": None,
-    "icon_path": None,
-    "permission_level": "discente",
+    "email":"joao1@example.com"
 }
 
 
@@ -51,9 +38,12 @@ async def debug_async():
     face_service = FaceService(camera_rep, face_model)
     api = ApiService(face_service, db_rep)
 
-    novo_user = UserModel.model_validate(admin_user)
-    novo_user.set_encoding(_encoding_teste(0.8))
-    now_user = UserModel.model_validate(teste_user)
+    novo_user = UserModel()
+    now_user = UserModel()
+    now_user.email = "joaosilva@example.com"
+    novo_user.id = "77543246"
+
+
     response = await api._update_user(novo_user, now_user)
     print(response)
 
