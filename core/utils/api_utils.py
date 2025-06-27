@@ -1,20 +1,28 @@
 import hashlib
 import random
 
+import hashlib
+import random
+
 class ApiUtils:
-    def _generate_id(self):
+    @staticmethod
+    def _generate_id() -> str:
         return str(random.randint(0, 99999999)).zfill(8)
-    
-    def _ensure_str_values(self, data: dict):
+
+    @staticmethod
+    def _ensure_str_values(data: dict) -> dict:
         return {key: f"'{value}'" for key, value in data.items()}
-    
-    is_empty_list = lambda list: [] if not list else list
-    
-    def _hash_sha256(self, s: str) -> str:
-     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
+    @staticmethod
+    def is_empty_list(lst) -> list:
+        return [] if not lst else lst
 
-    def _is_sha256_hash(self, s: str) -> bool:
+    @staticmethod
+    def _hash_sha256(s: str) -> str:
+        return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _is_sha256_hash(s: str) -> bool:
         if len(s) != 64:
             return False
         try:
@@ -22,4 +30,10 @@ class ApiUtils:
             return True
         except ValueError:
             return False
-    
+
+    @staticmethod
+    def _limpar_dict(d: dict) -> dict:
+        return {
+            k: v for k, v in d.items()
+            if v not in ("", None, [], {})
+        }

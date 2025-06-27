@@ -1,4 +1,5 @@
 from core.errors.api_exception import ApiDatabaseError
+from core.utils.api_utils import ApiUtils
 from models.face_model import FaceModel
 from models.login_model import LoginModel
 from models.response_model import ResponseModel
@@ -129,17 +130,10 @@ class ApiService:
 
     async def _update_user(self, user_model: UserModel, new_model: UserModel):
         try:
-            def limpar_dict(d: dict) -> dict:
-                return {
-                    k: v for k, v in d.items()
-                    if v not in ("", None, [], {})
-                }
+            
 
-            model_dict = limpar_dict(user_model.model_dump())
-            new_model_dict = limpar_dict(new_model.model_dump())
-
-            print("Filtro (WHERE):", model_dict)
-            print("Novos valores (SET):", new_model_dict)
+            model_dict = ApiUtils._limpar_dict(user_model.model_dump())
+            new_model_dict = ApiUtils.limpar_dict(new_model.model_dump())
 
             query = QueryModel(table=DatabaseTables.perfis, values=model_dict)
             new_query = QueryModel(table=DatabaseTables.perfis, values=new_model_dict)
@@ -161,4 +155,34 @@ class ApiService:
         except Exception as e:
             return ResponseModel(
                 log="Erro ao atualizar usuário", error=True, status=True, details=str(e)
+            )
+
+
+    async def _delete_user(self, user_model: UserModel):
+        try:
+            model_dict = user_model.model_dump()
+            model_dict = ApiUtils._limpar_dict(model_dict)
+            print(model_dict)
+            query = QueryModel(
+                table=DatabaseTables.perfis,
+                values=model_dict,
+            )
+
+            result = await self.db_repository.delete(query)
+
+            if result.error:
+                return ResponseModel(
+                    log="Erro ao deletar usuário",
+                    error=True,
+                    status=True,
+                    details=result.details,
+                )
+
+            return ResponseModel(
+                log="Usuário deletado com sucesso", status=True, error=False
+            )
+
+        except Exception as e:
+            return ResponseModel(
+                log="Erro ao deletar usuário", error=True, status=True, details=str(e)
             )

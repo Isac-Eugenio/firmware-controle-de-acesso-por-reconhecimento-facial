@@ -25,9 +25,6 @@ api_utils = ApiUtils()
 admin_user = {
   "id":"77543246"
 }
-teste_user = {
-    "email":"joao1@example.com"
-}
 
 
 async def debug_async():
@@ -38,13 +35,9 @@ async def debug_async():
     face_service = FaceService(camera_rep, face_model)
     api = ApiService(face_service, db_rep)
 
-    novo_user = UserModel()
-    now_user = UserModel()
-    now_user.email = "joaosilva@example.com"
-    novo_user.id = "77543246"
-
-
-    response = await api._update_user(novo_user, now_user)
+    novo_user = UserModel.model_validate(admin_user)
+    
+    response = await api._delete_user(novo_user)
     print(response)
 
 
