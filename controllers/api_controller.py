@@ -1,3 +1,5 @@
+from core.errors.database_exception import DatabaseException
+from core.errors.face_exceptions import FaceRecognitionException
 from models.response_model import ResponseModel
 from models.user_model import UserModel
 from repository.database_repository import DatabaseRepository
@@ -10,6 +12,7 @@ class ApiController:
         self, face_service: FaceService, database_repository: DatabaseRepository
     ):
         self.api_service = ApiService(face_service, database_repository)
+        self.face_service = face_service
 
     async def login(self, user_model: UserModel):
         try:
@@ -52,4 +55,57 @@ class ApiController:
                 details=str(e),
             )
 
+            return
+
+    async def register_user(self, user_model: UserModel):
+        try:
+            yield ResponseModel(status=False, error=False, log="Iniciando Registro")
+
+            yield ResponseModel(status=False, error=False, log="Coletando Rosto")
+
+            self.face_service.create_face_model()
+
+            encoding = self.face_service.face_model.encodings
+
+            user_model.set_encoding(encoding)
+
+            yield ResponseModel(
+                status=False, error=False, log="Rosto Coletado com Sucesso"
+            )
+
+            yield ResponseModel(
+                status=False, error=False, log="Adicionando novo usuario"
+            )
+
+            task = await self.api_service._insert_user(user_model)
+
+            if task.error:
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="Erro ao registrar usuário",
+                    details=task.details,
+                )
+                return
+
+            yield ResponseModel(
+                status=True, error=False, log="Usuário registrado com sucesso"
+            )
+            return
+
+        except FaceRecognitionException as e:
+            yield ResponseModel(
+                status=True,
+                error=True,
+                log="Erro ao Coletar o Rosto",
+                details=str(e),
+            )
+
+        except (Exception, ValueError) as e:
+            yield ResponseModel(
+                status=True,
+                error=True,
+                log="Erro ao processar registro",
+                details=str(e),
+            )
             return

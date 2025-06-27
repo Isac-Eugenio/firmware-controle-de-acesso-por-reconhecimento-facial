@@ -103,7 +103,7 @@ class ApiService:
         try:
             model_dict = user_model.model_dump()
             model_dict = ApiUtils._limpar_dict(model_dict)
-            
+
             query = QueryModel(
                 table=DatabaseTables.perfis,
                 values=model_dict,
@@ -134,7 +134,6 @@ class ApiService:
     async def _insert_user(self, user_model: UserModel):
         try:
             model_dict = user_model.model_dump()
-            print(model_dict)
 
             query = QueryModel(
                 table=DatabaseTables.perfis,

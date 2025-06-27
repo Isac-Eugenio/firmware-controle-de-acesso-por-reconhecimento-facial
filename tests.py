@@ -22,8 +22,14 @@ def _encoding_teste(float_value: float) -> str:
 
 
 admin_user = {
-    "email": "root.debug@gmail.com",
-    "senha": ApiUtils._hash_sha256("@Isac1998"),
+   "alias":"joao",
+   "email":"joao@example.com",
+   "nome":"João da Silva",
+   "permission_level": "discente",
+   "matricula": "2020202020202",
+   "cpf": "202.202.222-77",
+   "id": ApiUtils._generate_id()
+
 }
 
 camera_rep = CameraRepository(Camera)
@@ -46,11 +52,11 @@ async def debug_async():
 
 async def debug_stream():
     model = UserModel.model_validate(admin_user)
-    model.permission_level = "administrador"
-    print("Iniciando teste de login...\n")
+    
+    print("Iniciando teste de register...\n")
 
     # Roda o método login e imprime os yields
-    async for resposta in api_controller.login(model):
+    async for resposta in api_controller.register_user(model):
         print("Resposta:")
         resposta = resposta.model_dump()
 

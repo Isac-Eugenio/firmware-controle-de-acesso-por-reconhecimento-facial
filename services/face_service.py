@@ -67,7 +67,7 @@ class FaceService:
                 raise FaceLocationError("Nenhum rosto detectado")
 
             self.face_model.location = locations[0]
-            self.face_model.encoding = self.get_first_face_encoding(
+            self.face_model.encodings = self.get_first_face_encoding(
                 self.face_model.location
             )
 
