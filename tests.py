@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+from controllers.api_controller import ApiController
 from core.config.app_config import (
     CameraConfig as Camera,
     DatabaseConfig,
@@ -20,29 +21,42 @@ def _encoding_teste(float_value: float) -> str:
     return zeros_float_str
 
 
-api_utils = ApiUtils()
-
 admin_user = {
-  "id":"77543246"
+    "email": "root.debug@gmail.com",
+    "senha": ApiUtils._hash_sha256("@Isac1998"),
 }
+
+camera_rep = CameraRepository(Camera)
+db_rep = DatabaseRepository()
+face_model = FaceModel()
+face_service = FaceService(camera_rep, face_model)
+
+api_controller = ApiController(face_service=face_service, database_repository=db_rep)
 
 
 async def debug_async():
 
-    camera_rep = CameraRepository(Camera)
-    db_rep = DatabaseRepository()
-    face_model = FaceModel()
-    face_service = FaceService(camera_rep, face_model)
     api = ApiService(face_service, db_rep)
 
     novo_user = UserModel.model_validate(admin_user)
-    
-    response = await api._delete_user(novo_user)
-    print(response)
+
+    response = await api._count_user(novo_user)
+    print(dict(response.data))
 
 
 async def debug_stream():
-    pass
+    model = UserModel.model_validate(admin_user)
+    model.permission_level = "administrador"
+    print("Iniciando teste de login...\n")
+
+    # Roda o método login e imprime os yields
+    async for resposta in api_controller.login(model):
+        print("Resposta:")
+        resposta = resposta.model_dump()
+
+        for k, v in resposta.items():
+            print(f"  {k}: {v}")
+        print("-" * 30)
 
 
 def debug():
@@ -54,5 +68,5 @@ def debug():
 
 if __name__ == "__main__":
 
-    asyncio.run(debug_async())
+    asyncio.run(debug_stream())
     # debug()

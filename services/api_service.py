@@ -99,6 +99,38 @@ class ApiService:
                 data=None,
             )
 
+    async def _count_user(self, user_model: UserModel):
+        try:
+            model_dict = user_model.model_dump()
+            model_dict = ApiUtils._limpar_dict(model_dict)
+            
+            query = QueryModel(
+                table=DatabaseTables.perfis,
+                values=model_dict,
+            )
+
+            result = await self.db_repository.count(query)
+
+            if result.error:
+                return ResponseModel(
+                    log="Erro ao contar usuários",
+                    error=True,
+                    status=True,
+                    details=result.details,
+                )
+
+            return ResponseModel(
+                log="Contagem de usuários realizada com sucesso",
+                status=True,
+                error=False,
+                data=result.data,
+            )
+
+        except Exception as e:
+            return ResponseModel(
+                log="Erro ao contar usuários", error=True, status=True, details=str(e)
+            )
+        
     async def _insert_user(self, user_model: UserModel):
         try:
             model_dict = user_model.model_dump()
@@ -186,3 +218,4 @@ class ApiService:
             return ResponseModel(
                 log="Erro ao deletar usuário", error=True, status=True, details=str(e)
             )
+    
