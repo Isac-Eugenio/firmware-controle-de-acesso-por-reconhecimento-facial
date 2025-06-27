@@ -6,7 +6,9 @@ from services.face_service import FaceService
 
 
 class ApiController:
-    def __init__(self,face_service: FaceService, database_repository: DatabaseRepository):
+    def __init__(
+        self, face_service: FaceService, database_repository: DatabaseRepository
+    ):
         self.api_service = ApiService(face_service, database_repository)
 
     async def login(self, user_model: UserModel):
@@ -25,23 +27,23 @@ class ApiController:
                 )
 
                 return
-            
+
             if response_dict.get("total", 0) > 0:
                 yield ResponseModel(
                     status=True,
                     error=False,
                     log="Login bem-sucedido",
-                    data=response_dict
+                    data=response_dict,
                 )
             else:
                 yield ResponseModel(
                     status=True,
                     error=False,
                     log="Email ou senha incorretos !",
-                    data=response_dict
+                    data=response_dict,
                 )
 
-            return 
+            return
         except (Exception, ValueError) as e:
             yield ResponseModel(
                 status=False,
@@ -50,9 +52,4 @@ class ApiController:
                 details=str(e),
             )
 
-            return 
-
-
-
-         
-    
+            return
