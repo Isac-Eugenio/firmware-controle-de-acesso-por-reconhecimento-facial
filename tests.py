@@ -23,7 +23,6 @@ def _encoding_teste(float_value: float) -> str:
 api_utils = ApiUtils()
 
 admin_user = {
-    "id": api_utils._generate_id(),
     "nome": "Joao da Silva",
     "alias": "Joao",
     "cpf": "122.222.222-21",
@@ -32,6 +31,15 @@ admin_user = {
     "icon_path": None,
     "permission_level": "discente",
     # encodings está ausente
+}
+teste_user = {
+    "nome": "Joao da Silva",
+    "alias": "Joao",
+    "cpf": "122.222.222-21",
+    "email": "joao@example.com",
+    "matricula": None,
+    "icon_path": None,
+    "permission_level": "discente",
 }
 
 
@@ -45,6 +53,9 @@ async def debug_async():
 
     novo_user = UserModel.model_validate(admin_user)
     novo_user.set_encoding(_encoding_teste(0.8))
+    now_user = UserModel.model_validate(teste_user)
+    response = await api._update_user(novo_user, now_user)
+    print(response)
 
 
 async def debug_stream():

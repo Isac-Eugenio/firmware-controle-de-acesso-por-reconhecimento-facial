@@ -108,7 +108,6 @@ class ApiService:
                 values=user_dict,
             )
 
-            query.insert()
             result = await self.db_repository.insert(query)
 
             if result.error:
@@ -126,4 +125,31 @@ class ApiService:
         except Exception as e:
             return ResponseModel(
                 log="Erro ao inserir usuário", error=True, status=True, details=str(e)
+            )
+
+    async def _update_user(self, user_model: UserModel, new_model: UserModel):
+        try:
+            user_dict = new_model.model_dump()
+            new_model = user_model.model_dump()
+
+            query = QueryModel(table=DatabaseTables.perfis, values=user_dict)
+            new_query = QueryModel(table=DatabaseTables.perfis, values=new_model)
+
+            result = await self.db_repository.update(query, new_query)
+
+            if result.error:
+                return ResponseModel(
+                    log="Erro ao atualizar usuário",
+                    error=True,
+                    status=True,
+                    details=result.details,
+                )
+
+            return ResponseModel(
+                log="Usuário atualizado com sucesso", status=True, error=False
+            )
+
+        except Exception as e:
+            return ResponseModel(
+                log="Erro ao atualizar usuário", error=True, status=True, details=str(e)
             )
