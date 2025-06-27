@@ -1,18 +1,17 @@
-from typing import Optional, List, Union
+import hashlib
+from typing import Optional, Union, Literal, List, get_args
 import numpy as np
-from pydantic import BaseModel, PrivateAttr, field_validator, model_validator
-from enum import Enum
-from passlib.hash import bcrypt
+from pydantic import BaseModel, computed_field, field_validator, model_validator
 from core.config.app_config import PerfisColumns
-from core.errors.model_exception import ModelAttributeError, ModelValueError
+from core.errors.model_exception import ModelValueError
 from models.face_model import FaceModel
-import inspect
+import re
+
+PermissionLiteral = Literal["administrador", "discente", "docente"]
 
 
-class PermissionLevel(str, Enum):
-    ADMINISTRADOR = "administrador"
-    DISCENTE = "discente"
-    DOCENTE = "docente"
+def hash_sha256(s: str) -> str:
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
 
 class BaseUserModel(BaseModel):
@@ -22,31 +21,28 @@ class BaseUserModel(BaseModel):
     alias: str = ""
     cpf: str = ""
     id: str = ""
-    permission_level: PermissionLevel = PermissionLevel.DISCENTE
+    permission_level: PermissionLiteral = "discente"
     icon_path: str = ""
 
-    # campo senha temporário só para entrada de texto puro na criação
-    senha: Optional[str] = None
-
-    # atributos privados
-    _senha_hash: str = PrivateAttr("")
-    _face_model: FaceModel = PrivateAttr(default_factory=FaceModel)
+    senha: str = ""  # pública e sempre será o hash
+    _face_model: FaceModel = FaceModel()
 
     @model_validator(mode="before")
     def process_senha(cls, values):
-        senha_raw = values.get("senha")
-        if senha_raw:
-            if len(senha_raw) < 9:
-                raise ModelValueError("Senha deve ter no mínimo 9 caracteres")
-            # Hash da senha já aqui
-            values["_senha_hash"] = bcrypt.hash(senha_raw)
-            # Remove senha em texto puro para não ficar no modelo final
-            values["senha"] = None
+        senha_raw = values.get("senha", "")
+        if not senha_raw:
+            raise ModelValueError("Senha não pode estar vazia.")
+
+        # Se já estiver no formato de hash SHA-256
+        if re.fullmatch(r"[0-9a-fA-F]{64}", senha_raw):
+            values["senha"] = senha_raw.lower()
         else:
-            values["_senha_hash"] = ""
+            if len(senha_raw) < 9:
+                raise ModelValueError("Senha deve ter no mínimo 9 caracteres.")
+            values["senha"] = hash_sha256(senha_raw)
+
         return values
 
-    # email validation
     @field_validator("email")
     def check_email(cls, v):
         if v and "@" not in v:
@@ -55,64 +51,34 @@ class BaseUserModel(BaseModel):
 
     @model_validator(mode="before")
     def check_permission_level(cls, values):
-        pl = values.get("permission_level")
-        if pl is None:
-            values["permission_level"] = PermissionLevel.DISCENTE
-        elif isinstance(pl, str):
-            try:
-                values["permission_level"] = PermissionLevel(pl)
-            except ValueError:
-                raise ModelValueError(f"permission_level inválido: {pl}")
-        elif not isinstance(pl, PermissionLevel):
+        pl = values.get("permission_level", "discente")
+        if pl not in get_args(PermissionLiteral):
             raise ModelValueError(f"permission_level inválido: {pl}")
+        values["permission_level"] = pl
         return values
 
     @classmethod
-    def model_validate(cls, data: dict): 
-        senha = data.pop(PerfisColumns().password)
-        obj = super().model_validate(data)
-        obj._senha_hash = bcrypt.hash(senha)
-        return obj
-
-    @property
-    def senha(self):
-        # só quem herda pode acessar o hash
-        caller_self = None
-        try:
-            caller_self = inspect.stack()[1].frame.f_locals.get("self", None)
-        except Exception:
-            pass
-        if caller_self and isinstance(caller_self, BaseUserModel):
-            return self._senha_hash
-        raise ModelAttributeError("A senha não pode ser acessada diretamente.")
+    def model_validate(cls, data: dict):
+        return super().model_validate(data)
 
     def verificar_senha(self, senha: str) -> bool:
-        return bcrypt.verify(senha, self._senha_hash)
-
-    # Email Setter seguro
-    def set_email(self, email: str) -> None:
-        if "@" not in email:
-            raise ModelValueError("Email inválido")
-        self.email = email
-
+        return hash_sha256(senha) == self.senha
 
     @property
-    def encoding(self) -> Optional[np.ndarray]:
-        return self._face_model.encoding
+    def encodings(self) -> Optional[np.ndarray]:
+        return self._face_model.encodings
 
-    def set_encoding(self, encoding: Union[str, np.ndarray, list[float]]) -> None:
+    def set_encoding(self, encoding: Union[str, np.ndarray, List[float]]) -> None:
         if isinstance(encoding, str):
-            encoding = self._face_model._encoding_array(encoding)  # já retorna np.ndarray
+            encoding = self._face_model._encoding_array(encoding)
 
-        # Se for lista, converte para np.ndarray
         if isinstance(encoding, list):
             encoding = np.array(encoding, dtype=float)
 
-        # Agora garante que é np.ndarray com float
         if not isinstance(encoding, np.ndarray):
             raise ModelValueError("Encoding deve ser um np.ndarray ou uma string.")
 
-        if encoding.dtype.kind not in ("f", "i"):  # float ou int
+        if encoding.dtype.kind not in ("f", "i"):
             raise ModelValueError("Encoding deve ser um array numérico (float ou int).")
 
         if encoding.size != 128:

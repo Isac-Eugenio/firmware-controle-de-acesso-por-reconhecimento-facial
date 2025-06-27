@@ -98,36 +98,34 @@ class ApiService:
                 data=None,
             )
 
-    """ 
-    TODO: Manutenção
-    async def _insert_user(self, user_model: UserModel, face_model: FaceModel):
+    async def _insert_user(self, user_model: UserModel):
         try:
-            user_dict = user_model.to_dict()
-            encoding_str = FaceModel._encoding_array(face_model.encoding)
+            user_dict = user_model.model_dump()
+            print(user_dict)
 
-            user_dict[_ENCODING_COLUMN] = encoding_str
-
-            insert_model = QueryModel(
-                table=_NAME_TABLE_PERFIS,
-                columns=list(user_dict.keys()),
-                values=list(user_dict.values())
+            query = QueryModel(
+                table=DatabaseTables.perfis,
+                values=user_dict,
             )
 
-            result = await self.db_repository.insert(insert_model)
+            query.insert()
+            print(query)
+            
+            result = await self.db_repository.insert(query)
 
             if result.error:
-                raise ApiDatabaseError("Erro ao inserir usuário")
+                return ResponseModel(
+                    log="Erro ao inserir usuário",
+                    error=True,
+                    status=True,
+                    details=result.details,
+                )
 
             return ResponseModel(
-                log="Usuário inserido com sucesso",
-                status=True,
-                error=False
+                log="Usuário inserido com sucesso", status=True, error=False
             )
 
         except Exception as e:
             return ResponseModel(
-                log="Erro ao inserir usuário",
-                error=True,
-                status=True,
-                details=str(e)
-            ) """
+                log="Erro ao inserir usuário", error=True, status=True, details=str(e)
+            )

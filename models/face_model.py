@@ -4,7 +4,7 @@ from pydantic import BaseModel, field_validator, ValidationError, ConfigDict
 from core.errors.face_exceptions import *
 
 class FaceModel(BaseModel):
-    encoding: Union[List[float], np.ndarray] = []
+    encodings: Union[List[float], np.ndarray] = []
     location: Tuple[int, int, int, int] = ()
 
     model_config = ConfigDict(
@@ -57,7 +57,7 @@ class FaceModel(BaseModel):
         try:
             if model is None:
                 return {
-                    "encoding": self.encoding.tolist() if isinstance(self.encoding, np.ndarray) else self.encoding,
+                    "encoding": self.encodings.tolist() if isinstance(self.encodings, np.ndarray) else self.encodings,
                     "location": self.location
                 }
             return {
