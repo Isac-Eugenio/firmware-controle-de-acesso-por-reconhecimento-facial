@@ -1,6 +1,6 @@
 import asyncio
 import hashlib
-from controllers.api_controller import ApiController
+from controllers.user_controller import UserController
 from core.config.app_config import (
     CameraConfig as Camera,
     DatabaseConfig,
@@ -8,6 +8,7 @@ from core.config.app_config import (
     PerfisColumns,
 )
 from models.face_model import FaceModel
+from models.login_model import LoginModel
 from models.user_model import UserModel
 from repository.camera_repository import CameraRepository
 from repository.database_repository import DatabaseRepository, DATABASE_URL
@@ -27,8 +28,6 @@ admin_user = {
    "nome":"João da Silva",
    "permission_level": "discente",
    "matricula": "2020202020202",
-   "cpf": "202.202.222-77",
-   "id": ApiUtils._generate_id()
 
 }
 
@@ -37,40 +36,50 @@ db_rep = DatabaseRepository()
 face_model = FaceModel()
 face_service = FaceService(camera_rep, face_model)
 
-api_controller = ApiController(face_service=face_service, database_repository=db_rep)
+user_controller = UserController(face_service=face_service, database_repository=db_rep)
 
 
 async def debug_async():
-
+    teste = {
+        "email": "root.debug@gmail.com",
+        "senha": "@Isac1998"
+    }
+    model = LoginModel.model_validate(teste)
     api = ApiService(face_service, db_rep)
 
-    novo_user = UserModel.model_validate(admin_user)
-
-    response = await api._count_user(novo_user)
+    response = await api._login_user(model)
     print(dict(response.data))
+    print(response)
 
 
 async def debug_stream():
-    #model = UserModel.model_validate(admin_user)
+    admin = UserModel()
+    admin.id = "20109807"
 
-    async for resposta in api_controller.load_table_user():
-        res = resposta.data
-        if res is None:
-            continue
-        
+    form = {
+        "email":"root.debug@gmail.com",
+        "senha":"@Isac1998"
+    }
+
+    model = LoginModel.model_validate(form)
+    async for resposta in user_controller.login(model):
+        res = resposta
         print(res)
 
         
 
 
 def debug():
-    novo_user = UserModel.model_validate(admin_user)
-    novo_user.set_encoding(_encoding_teste(0.4))
-    print(novo_user.model_dump())
-    print(novo_user.verificar_senha("admin1234"))
+    teste = {
+        "email": "jao@gmail.com",
+        "senha":"123456789",
+        "permission_level": "administrador"
+    }
 
+    login = LoginModel.model_validate(teste)
+    print(login)
 
 if __name__ == "__main__":
 
     asyncio.run(debug_stream())
-    # debug()
+    #debug()

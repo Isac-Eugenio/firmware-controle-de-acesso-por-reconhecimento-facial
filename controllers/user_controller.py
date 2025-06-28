@@ -1,5 +1,6 @@
 from core.errors.database_exception import DatabaseException
 from core.errors.face_exceptions import FaceRecognitionException
+from models.login_model import LoginModel
 from models.response_model import ResponseModel
 from models.user_model import UserModel
 from repository.database_repository import DatabaseRepository
@@ -7,21 +8,19 @@ from services.api_service import ApiService
 from services.face_service import FaceService
 
 
-class ApiController:
+class UserController:
     def __init__(
         self, face_service: FaceService, database_repository: DatabaseRepository
     ):
         self.api_service = ApiService(face_service, database_repository)
         self.face_service = face_service
 
-    async def login(self, user_model: UserModel):
+    async def login(self, login_model: LoginModel):
         try:
-            user_model.permission_level = "administrador"
 
             yield ResponseModel(status=False, error=False, log="Verificando Login")
 
-            task = await self.api_service._count_user(user_model)
-            response_dict = dict(task.data)
+            task = await self.api_service._login_user(login_model)
 
             if task.error:
                 yield ResponseModel(
@@ -31,24 +30,9 @@ class ApiController:
                     details=task.details,
                 )
 
-                return
-
-            if response_dict.get("total", 0) > 0:
-                yield ResponseModel(
-                    status=True,
-                    error=False,
-                    log="Login bem-sucedido",
-                    data=True,
-                )
-            else:
-                yield ResponseModel(
-                    status=True,
-                    error=False,
-                    log="Email ou senha incorretos !",
-                    data=False,
-                )
-
+            yield task
             return
+
         except (Exception, ValueError) as e:
             yield ResponseModel(
                 status=False,
@@ -59,7 +43,7 @@ class ApiController:
 
             return
 
-    async def register_user(self, user_model: UserModel):
+    async def register(self, user_model: UserModel):
         try:
             yield ResponseModel(status=False, error=False, log="Iniciando Registro")
 
@@ -112,7 +96,7 @@ class ApiController:
             )
             return
 
-    async def load_table_user(self):
+    async def load_data(self):
         try:
             yield ResponseModel(status=False, error=False, log="Carregando Tabela")
             task = await self.api_service._load_users()
@@ -142,3 +126,32 @@ class ApiController:
                 details=str(e),
             )
             return
+
+    async def update(self, user_model: UserModel, new_model: UserModel):
+        try:
+            yield ResponseModel(status=False, error=False, log="Atualizando Usuario")
+
+            yield ResponseModel(status=False, error=False, log="Atualizando Usuario")
+            task = await self.api_service._update_user(user_model, new_model)
+
+            if task.error:
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="Error ao Atualizar o Usuario",
+                    details=task.details,
+                )
+                return
+
+            yield ResponseModel(
+                status=True, error=False, log="Usuario Atualizado com sucesso"
+            )
+            return
+
+        except (Exception, ValueError) as e:
+            yield ResponseModel(
+                status=True,
+                error=False,
+                log="Erro ao Atualizar o Usuario",
+                details=str(e),
+            )

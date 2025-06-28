@@ -1,6 +1,7 @@
 from core.errors.api_exception import ApiDatabaseError
 from core.utils.api_utils import ApiUtils
 from models.face_model import FaceModel
+from models.login_model import LoginModel
 from models.response_model import ResponseModel
 from repository.database_repository import DatabaseRepository
 from models.query_model import QueryModel
@@ -52,7 +53,7 @@ class ApiService:
 
         except Exception as e:
             return ResponseModel(
-                log="Erro ao carregar perfis",
+                log="Erro interno no Servidor",
                 error=True,
                 status=True,
                 details=str(e),
@@ -91,7 +92,7 @@ class ApiService:
 
         except Exception as e:
             return ResponseModel(
-                log="Erro ao carregar perfis (sem encoding)",
+                log="Erro interno no Servidor",
                 error=True,
                 status=True,
                 details=str(e),
@@ -127,9 +128,9 @@ class ApiService:
 
         except Exception as e:
             return ResponseModel(
-                log="Erro ao contar usuários", error=True, status=True, details=str(e)
+                log="Erro interno no Servidor", error=True, status=True, details=str(e)
             )
-        
+
     async def _insert_user(self, user_model: UserModel):
         try:
             model_dict = user_model.model_dump()
@@ -155,12 +156,11 @@ class ApiService:
 
         except Exception as e:
             return ResponseModel(
-                log="Erro ao inserir usuário", error=True, status=True, details=str(e)
+                log="Erro interno no Servidor", error=True, status=True, details=str(e)
             )
 
     async def _update_user(self, user_model: UserModel, new_model: UserModel):
         try:
-            
 
             model_dict = ApiUtils._limpar_dict(user_model.model_dump())
             new_model_dict = ApiUtils.limpar_dict(new_model.model_dump())
@@ -184,15 +184,14 @@ class ApiService:
 
         except Exception as e:
             return ResponseModel(
-                log="Erro ao atualizar usuário", error=True, status=True, details=str(e)
+                log="Erro interno no Servidor", error=True, status=True, details=str(e)
             )
-
 
     async def _delete_user(self, user_model: UserModel):
         try:
             model_dict = user_model.model_dump()
             model_dict = ApiUtils._limpar_dict(model_dict)
-            print(model_dict)
+
             query = QueryModel(
                 table=DatabaseTables.perfis,
                 values=model_dict,
@@ -214,6 +213,54 @@ class ApiService:
 
         except Exception as e:
             return ResponseModel(
-                log="Erro ao deletar usuário", error=True, status=True, details=str(e)
+                log="Erro interno no Servidor", error=True, status=True, details=str(e)
             )
-    
+
+    async def _login_user(self, login_model: LoginModel):
+        try:
+            model_dict = login_model.model_dump()
+            columns = list(model_dict.keys())
+            columns_null = ApiUtils._limpar_dict(model_dict).keys()
+            conditions = [f"{key} = :{key}" for key in columns_null]
+            where_clause = " AND ".join(conditions)
+
+            query = QueryModel(
+                table=DatabaseTables.perfis,
+                condition=where_clause,
+                columns=columns,
+                values=ApiUtils._limpar_dict(model_dict),
+            )
+
+            task = await self.db_repository.select_one(query)
+            if task.error:
+                return ResponseModel(
+                    status=True,
+                    error=False,
+                    log="Erro ao verificar o Usuario",
+                    data=None,
+                    details=task.details,
+                )
+
+            if task.data is None:
+                return ResponseModel(
+                    status=True,
+                    error=True,
+                    log="Email ou senha incorretos!",
+                    data=None,
+                )
+
+            return ResponseModel(
+                status=True,
+                error=False,
+                log="Login bem-sucedido",
+                data=task.data,
+            )
+
+        except Exception as e:
+            return ResponseModel(
+                status=True,
+                error=True,
+                log="Erro interno no Servidor",
+                data=None,
+                details=str(e),
+            )

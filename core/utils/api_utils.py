@@ -4,6 +4,7 @@ import random
 import hashlib
 import random
 
+
 class ApiUtils:
     @staticmethod
     def _generate_id() -> str:
@@ -33,7 +34,8 @@ class ApiUtils:
 
     @staticmethod
     def _limpar_dict(d: dict) -> dict:
-        return {
-            k: v for k, v in d.items()
-            if v not in ("", None, [], {})
-        }
+        return {k: v for k, v in d.items() if v not in ("", None, [], {})}
+
+    @staticmethod
+    def _null_or_empty_columns(d: dict) -> list[str]:
+        return [k for k, v in d.items() if v in ("", None, [], {})]

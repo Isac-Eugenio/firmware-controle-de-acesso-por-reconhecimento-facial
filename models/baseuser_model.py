@@ -9,7 +9,7 @@ from models.face_model import FaceModel
 import re
 
 PermissionLiteral = Literal["administrador", "discente", "docente"]
-api_utils = ApiUtils()
+ApiUtils = ApiUtils()
 
 class BaseUserModel(BaseModel):
     nome: str = ""
@@ -45,7 +45,7 @@ class BaseUserModel(BaseModel):
             # Senha raw, precisa ter no mínimo 9 chars para hash
             if len(senha_raw) < 9:
                 raise ModelValueError("Senha deve ter no mínimo 9 caracteres.")
-            values["senha"] = api_utils._hash_sha256(senha_raw)
+            values["senha"] = ApiUtils._hash_sha256(senha_raw)
 
         return values
 

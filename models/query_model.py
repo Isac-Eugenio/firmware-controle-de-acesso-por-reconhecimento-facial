@@ -13,7 +13,10 @@ class QueryModel:
     values: Optional[Union[List[Any], dict]] = None
     query: Optional[str] = None
 
-    def select(self):
+    def select(self, values: dict =None):
+        if not values is None:
+            self.values = values
+
         if self.columns is None:
             self.columns = "*"
         else:
@@ -26,7 +29,7 @@ class QueryModel:
         self.query = f"SELECT {self.columns} FROM {self.table}"
         if self.condition:
             self.query += f" WHERE {self.condition}"
-
+            
     def insert(self):
         try:
             if not isinstance(self.values, dict):
