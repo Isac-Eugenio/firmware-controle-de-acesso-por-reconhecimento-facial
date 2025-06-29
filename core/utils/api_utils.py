@@ -68,7 +68,7 @@ class ApiUtils:
                     else:
                         yield ResponseModel(
                             status=False,  # status False durante a execução
-                            log=str(etapa),
+                            log=mensagem.log,
                             data=mensagem,
                             error=False,
                             details=f"✅ Função [{etapa}] [{nome}] executada: {mensagem.log}",

@@ -43,9 +43,9 @@ async def debug_stream():
     }
     model_admin = LoginModel.model_validate(form_admin)
 
-    form_user = {"id": "09027797"}
+    form_user = {"id": "09027797", "permission_level":"discente"}
 
-    form_novo = {"email": "joaosilva2@gmail.com"}
+    form_novo = {"email": "joaosilva3@gmail.com"}
 
     model_user = UserModel.model_validate(form_user)
 
@@ -54,10 +54,9 @@ async def debug_stream():
     tasks = [
         (
             "Inserir Usuario",
-            lambda: user_controller.update(
+            lambda: user_controller.delete(
                 model_admin,
                 model_user,
-                model_novo
             ),
         )
     ]
