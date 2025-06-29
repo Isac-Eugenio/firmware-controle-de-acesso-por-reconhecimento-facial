@@ -1,3 +1,5 @@
 .venv
 
 .build/*.log
+
+remember.md
