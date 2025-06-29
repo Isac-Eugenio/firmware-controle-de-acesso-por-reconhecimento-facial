@@ -161,7 +161,7 @@ class UserService:
         try:
 
             model_dict = ApiUtils._limpar_dict(user_model.model_dump())
-            new_model_dict = ApiUtils.limpar_dict(new_model.model_dump())
+            new_model_dict = ApiUtils._limpar_dict(new_model.model_dump())
 
             query = QueryModel(table=DatabaseTables.perfis, values=model_dict)
             new_query = QueryModel(table=DatabaseTables.perfis, values=new_model_dict)

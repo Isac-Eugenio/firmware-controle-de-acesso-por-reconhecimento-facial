@@ -9,6 +9,7 @@ from core.config.app_config import (
 )
 from models.face_model import FaceModel
 from models.login_model import LoginModel
+from models.query_model import QueryModel
 from models.user_model import UserModel
 from repository.camera_repository import CameraRepository
 from repository.database_repository import DatabaseRepository, DATABASE_URL
@@ -31,33 +32,38 @@ user_controller = UserController(face_service=face_service, database_repository=
 
 
 async def debug_async():
-    form = {"id": "00000001", "senha": "@Isac1998", "email": "root.debug@gmail.com"}
-    model = LoginModel.model_validate(form)
-    User = UserService(face_service, db_rep)
-
-    response = await User._verify_user_with_id(model)
-    # print(dict(response.data))
-    print(response)
+    pass
 
 
 async def debug_stream():
-    # Preencha todos os campos relevantes de UserModel para um discente
-    form_user = {
-        "alias": "joao",
-        "email": "joao@example.com",
-        "nome": "João da Silva",
-        "matricula": "2020202020202",
-        "id": ApiUtils._generate_id(),
-        "cpf": "233.233.233-99"
+    form_admin = {
+        "id": "00000001",
+        "email": "root.debug@gmail.com",
+        "senha": "@Isac1998",
     }
-    model_user = UserModel.model_validate(form_user)
-    # LoginModel apenas com os campos necessários (sem senha)
-    form_admin = {"id": "00000001", "email": "root.debug@gmail.com", "senha": "@Isac1998"}
     model_admin = LoginModel.model_validate(form_admin)
 
-    # Testa o fluxo de registro
-    async for resposta in user_controller.register(model_user, model_admin):
-        print(resposta)
+    form_user = {"id": "09027797"}
+
+    form_novo = {"email": "joaosilva2@gmail.com"}
+
+    model_user = UserModel.model_validate(form_user)
+
+    model_novo = UserModel.model_validate(form_novo)
+
+    tasks = [
+        (
+            "Inserir Usuario",
+            lambda: user_controller.update(
+                model_admin,
+                model_user,
+                model_novo
+            ),
+        )
+    ]
+
+    async for resp in ApiUtils._execute_task(tasks, db_rep):
+        print(resp)
 
 
 def debug():

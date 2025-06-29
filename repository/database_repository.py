@@ -19,8 +19,6 @@ class DatabaseRepository:
             status=False, log="Banco ainda não conectado", error=False
         )
         self.isquery = lambda x: False if x is None else True
-        self._active_tasks = 0
-        self._lock = asyncio.Lock()
 
     async def _connect(self):
         if not self.isconnected.status:
@@ -36,40 +34,27 @@ class DatabaseRepository:
                 raise DatabaseConnectionError(
                     "Erro ao se conectar ao DB!", details=str(e)
                 ) from e
-
-    async def _ensure_connected(self):
-        print(self._lock, self.isconnected)
-        async with self._lock:
-            if not self.isconnected.status:
-                try:
-                    await self._connect()
-                except DatabaseException:
-                    raise
-                except Exception as e:
-                    raise DatabaseConnectionError(
-                        "Erro ao tentar reconectar ao DB!", details=str(e)
-                    ) from e
-            self._active_tasks += 1
-
-    # Modifique _disconnect:
+            
     async def _disconnect(self):
-        async with self._lock:
-            self._active_tasks -= 1
-            if self._active_tasks <= 0 and self.isconnected.status:
-                try:
-                    await self.database.disconnect()
-                    self.isconnected = ResponseModel(
-                        status=True, log="Desconexão do DB bem-sucedida!", error=False
-                    )
-                except Exception as e:
-                    self.isconnected = ResponseModel(
-                        status=False, log="Erro ao desconectar do DB!", error=True
-                    )
-                    raise DatabaseConnectionError(
-                        "Erro ao desconectar do DB!", details=str(e)
-                    ) from e
-            elif self._active_tasks < 0:
-                self._active_tasks = 0
+        if self.isconnected.status:
+            try:
+                await self.database.disconnect()
+                self.isconnected = ResponseModel(
+                    status=True, log="Desconexão bem-sucessida", error=False
+                )
+
+            except Exception as e:
+                self.isconnected = ResponseModel(
+                    status=True, log="Erro ao Desconectar o DB", error=False
+                )
+
+                raise DatabaseConnectionError(
+                    "Erro ao desconectar do DB", details=str(e)
+                ) from e
+        else:
+            self.isconnected = ResponseModel(
+                status=True, log="DB já desconectado", error=False
+            )
 
     async def _execute_query(self, query: QueryModel, type_fetch=None):
         try:
@@ -90,18 +75,17 @@ class DatabaseRepository:
 
     async def select_one(self, query: QueryModel):
         try:
-            await self._ensure_connected()
+
             query.select()
 
             result = await self._execute_query(query=query, type_fetch="one")
-            await self._disconnect()
 
             return ResponseModel(
                 status=True, log="Query executada com sucesso", data=result, error=False
             )
 
         except DatabaseException as e:
-            await self._disconnect()
+
             return ResponseModel(
                 status=True,
                 log="Erro ao se Comunicar ao DB",
@@ -110,23 +94,22 @@ class DatabaseRepository:
             )
 
         except Exception as e:
-            await self._disconnect()
+
             raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
 
     async def select(self, query: QueryModel):
         try:
-            await self._ensure_connected()
+
             query.select()
 
             result = await self._execute_query(query=query, type_fetch="all")
-            await self._disconnect()
 
             return ResponseModel(
                 status=True, log="Query executada com sucesso", data=result, error=False
             )
 
         except DatabaseException as e:
-            await self._disconnect()
+
             return ResponseModel(
                 status=True,
                 log="Erro ao se Comunicar ao DB",
@@ -135,42 +118,36 @@ class DatabaseRepository:
             )
 
         except Exception as e:
-            await self._disconnect()
+
             raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
 
     async def insert(self, query: QueryModel):
         try:
-            await self._ensure_connected()
 
             query.insert()
 
             result = await self._execute_query(query=query)
-
-            await self._disconnect()
 
             return ResponseModel(
                 status=True, error=False, log="Query executada com Sucesso", data=result
             )
 
         except DatabaseException as e:
-            await self._disconnect()
+
             return ResponseModel(
                 status=True, error=True, log="Erro ao Executar Query", details=str(e)
             )
 
         except Exception as e:
-            await self._disconnect()
+
             raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
 
     async def delete(self, query: QueryModel):
         try:
-            await self._ensure_connected()
+
             query.delete()
-            print(query.query)  # Debug: print the query being executed
 
             result = await self._execute_query(query=query)
-
-            await self._disconnect()
 
             return ResponseModel(
                 status=True,
@@ -180,7 +157,7 @@ class DatabaseRepository:
             )
 
         except DatabaseException as e:
-            await self._disconnect()
+
             return ResponseModel(
                 status=True,
                 log="Erro ao executar DELETE",
@@ -189,17 +166,15 @@ class DatabaseRepository:
             )
 
         except Exception as e:
-            await self._disconnect()
+
             raise DatabaseQueryError("Erro ao executar DELETE", details=str(e)) from e
 
     async def update(self, query: QueryModel, new_query: QueryModel):
         try:
-            await self._ensure_connected()
-            query.update(new_query)
-            print(query.query)
-            result = await self._execute_query(query=query)
 
-            await self._disconnect()
+            query.update(new_query)
+
+            result = await self._execute_query(query=query)
 
             match result:
                 case 1:
@@ -227,7 +202,7 @@ class DatabaseRepository:
                     )
 
         except DatabaseException as e:
-            await self._disconnect()
+
             return ResponseModel(
                 status=True,
                 log="Erro ao executar UPDATE",
@@ -236,17 +211,15 @@ class DatabaseRepository:
             )
 
         except Exception as e:
-            await self._disconnect()
+
             raise DatabaseQueryError("Erro ao executar UPDATE", details=str(e)) from e
 
     async def count(self, query: QueryModel):
         try:
-            await self._ensure_connected()
+
             query.count()
 
             result = await self._execute_query(query=query, type_fetch="one")
-
-            await self._disconnect()
 
             return ResponseModel(
                 status=True,
@@ -256,11 +229,11 @@ class DatabaseRepository:
             )
 
         except DatabaseException as e:
-            await self._disconnect()
+
             return ResponseModel(
                 status=True, log="Erro ao executar COUNT", details=e.details, error=True
             )
 
         except Exception as e:
-            await self._disconnect()
+
             raise DatabaseQueryError("Erro ao executar COUNT", details=str(e)) from e

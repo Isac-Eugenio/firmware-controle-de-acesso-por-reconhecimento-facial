@@ -1,3 +1,4 @@
+from typing import AsyncGenerator
 from core.errors.database_exception import DatabaseException
 from core.errors.face_exceptions import FaceRecognitionException
 from models.login_model import LoginModel
@@ -27,7 +28,7 @@ class UserController:
                     status=True,
                     error=True,
                     log="Erro no Login",
-                    details=task.details,
+                    details=str(task.details),
                 )
 
             yield task
@@ -43,35 +44,44 @@ class UserController:
 
             return
 
-    async def register(self, user_model: UserModel, login_model: LoginModel):
+    async def register(
+        self,
+        user_model: UserModel,
+        login_model: LoginModel,
+    ) -> AsyncGenerator[ResponseModel, None]:
         try:
             yield ResponseModel(status=False, error=False, log="Iniciando Registro")
 
-            yield ResponseModel(status=False, error=False, log="Verificando ID")
-
+            # Etapa 1: Verificando ID
             task = await self.user_service._verify_user_with_id(login_model)
             if task.error:
-                yield  ResponseModel(status=True, error=True, log="Erro ao verificar ID", details=task.details)
-                return 
-            
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="Erro ao verificar ID",
+                    details=str(task.details),
+                )
+                return
+
             if task.data is None or not task.data:
-                yield  ResponseModel(status=True, error=True, log="ID não Autorizado", details=task.details)
-                return 
-            
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="ID não Autorizado",
+                    details=str(task.details),
+                )
+                return
+
             yield ResponseModel(status=False, error=False, log="ID Autorizado")
 
-            yield ResponseModel(status=False, error=False, log="Coletando Rosto")
-
+            # Etapa 2: Registrando usuário com rosto
             self.face_service.create_face_model()
-
             encoding = self.face_service.face_model.encodings
-
             user_model.set_encoding(encoding)
 
             yield ResponseModel(
                 status=False, error=False, log="Rosto Coletado com Sucesso"
             )
-
             yield ResponseModel(
                 status=False, error=False, log="Adicionando novo usuario"
             )
@@ -83,14 +93,13 @@ class UserController:
                     status=True,
                     error=True,
                     log="Erro ao registrar usuário",
-                    details=task.details,
+                    details=str(task.details),
                 )
                 return
 
             yield ResponseModel(
                 status=True, error=False, log="Usuário registrado com sucesso"
             )
-            return
 
         except FaceRecognitionException as e:
             yield ResponseModel(
@@ -107,64 +116,120 @@ class UserController:
                 log="Erro ao processar registro",
                 details=str(e),
             )
-            return
 
-    async def load_data(self):
+    async def load_data(
+        self, login_model: LoginModel
+    ) -> AsyncGenerator[ResponseModel, None]:
         try:
-            yield ResponseModel(status=False, error=False, log="Carregando Tabela")
+            yield ResponseModel(
+                status=False, error=False, log="🔐 Verificando permissão de acesso"
+            )
+
+            # Verifica o ID do usuário
+            task = await self.user_service._verify_user_with_id(login_model)
+
+            if task.error:
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="❌ Erro ao verificar ID",
+                    details=str(task.details),
+                )
+                return
+
+            if task.data is None or not task.data:
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="❌ ID não autorizado",
+                    details="ID inválido ou sem permissão",
+                )
+                return
+
+            yield ResponseModel(status=False, error=False, log="✅ Acesso autorizado")
+            yield ResponseModel(
+                status=False, error=False, log="📥 Carregando tabela de usuários"
+            )
+
+            # Carrega os dados
             task = await self.user_service._load_users()
 
             if task.error:
                 yield ResponseModel(
                     status=True,
                     error=True,
-                    log="Erro ao  Carregar tabela",
-                    details=task.details,
+                    log="❌ Erro ao carregar a tabela",
+                    details=str(task.details),
                 )
                 return
 
             yield ResponseModel(
                 status=True,
                 error=False,
-                log="Tabela Carregada com Sucesso",
+                log="✅ Tabela carregada com sucesso",
                 data=task.data,
             )
-            return
 
-        except (Exception, ValueError) as e:
+        except Exception as e:
             yield ResponseModel(
                 status=True,
                 error=True,
-                log="Erro ao Carregar Tabela",
+                log="❌ Erro inesperado ao carregar tabela",
                 details=str(e),
             )
-            return
 
-    async def update(self, user_model: UserModel, new_model: UserModel):
+    async def update(
+        self, login_model: LoginModel, user_model: UserModel, new_model: UserModel
+    ) -> AsyncGenerator[ResponseModel, None]:
         try:
-            yield ResponseModel(status=False, error=False, log="Atualizando Usuario")
+            yield ResponseModel(
+                status=False, error=False, log="🔐 Verificando permissão de atualização"
+            )
 
-            yield ResponseModel(status=False, error=False, log="Atualizando Usuario")
+            # Verifica o ID do usuário atual (quem está tentando atualizar)
+            task = await self.user_service._verify_user_with_id(login_model)
+
+            if task.error:
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="❌ Erro ao verificar ID",
+                    details=str(task.details),
+                )
+                return
+
+            if task.data is None or not task.data:
+                yield ResponseModel(
+                    status=True,
+                    error=True,
+                    log="❌ ID não autorizado",
+                    details="ID inválido ou sem permissão",
+                )
+                return
+
+            yield ResponseModel(status=False, error=False, log="✅ Acesso autorizado")
+            yield ResponseModel(status=False, error=False, log="🔄 Atualizando usuário")
+
+            # Executa atualização
             task = await self.user_service._update_user(user_model, new_model)
 
             if task.error:
                 yield ResponseModel(
                     status=True,
                     error=True,
-                    log="Error ao Atualizar o Usuario",
-                    details=task.details,
+                    log="❌ Erro ao atualizar o usuário",
+                    details=str(task.details),
                 )
                 return
 
             yield ResponseModel(
-                status=True, error=False, log="Usuario Atualizado com sucesso"
+                status=True, error=False, log="✅ Usuário atualizado com sucesso"
             )
-            return
 
-        except (Exception, ValueError) as e:
+        except Exception as e:
             yield ResponseModel(
                 status=True,
-                error=False,
-                log="Erro ao Atualizar o Usuario",
+                error=True,
+                log="❌ Erro inesperado ao atualizar usuário",
                 details=str(e),
             )
