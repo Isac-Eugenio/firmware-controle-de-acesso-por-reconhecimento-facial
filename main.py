@@ -1,7 +1,7 @@
-from fastapi.middleware.cors import CORSMiddleware
+""" from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, requests, responses, websockets
 from services.login_service import LoginService
-from services.api_service import ApiService
+from services.user_service import ApiService
 import json
 
 app = FastAPI()
@@ -52,14 +52,13 @@ async def table_perfil(request: requests.Request):
     result = dict(auth)
     print(result)
     
-    """ if result.get("auth", True):  # Verificando se a autenticação foi bem-sucedida
+    if result.get("auth", True):  # Verificando se a autenticação foi bem-sucedida
         list_result = []
         api_service = ApiService()
         api_result = await api_service._get_table(columns=["nome", "alias", "email", "permission_level", "matricula"], table="usuarios")
 
         for row in api_result['result']:
-            list_result.append(dict(row))   """
-
+            list_result.append(dict(row))   
     return {"error": None, "tabela": []}
 
     return responses.JSONResponse(
@@ -133,4 +132,4 @@ async def debug():
 
     return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
 
-
+"""

@@ -1,3 +1,4 @@
+import asyncio
 from databases import Database as AsyncDatabase
 
 from core.errors.database_exception import *
@@ -18,6 +19,8 @@ class DatabaseRepository:
             status=False, log="Banco ainda não conectado", error=False
         )
         self.isquery = lambda x: False if x is None else True
+        self._active_tasks = 0
+        self._lock = asyncio.Lock()
 
     async def _connect(self):
         if not self.isconnected.status:
@@ -34,35 +37,39 @@ class DatabaseRepository:
                     "Erro ao se conectar ao DB!", details=str(e)
                 ) from e
 
-    async def _disconnect(self):
-        if self.isconnected.status:
-            try:
-                await self.database.disconnect()
-                self.isconnected = ResponseModel(
-                    status=True, log="Desconexão do DB bem-sucedida!", error=False
-                )
-            except Exception as e:
-                self.isconnected = ResponseModel(
-                    status=False, log="Erro ao desconectar do DB!", error=True
-                )
-                raise DatabaseConnectionError(
-                    "Erro ao desconectar do DB!", details=str(e)
-                ) from e
-        else:
-            self.isconnected = ResponseModel(
-                status=True, log="DB já desconectado!", error=False
-            )
-
     async def _ensure_connected(self):
-        if not self.isconnected.status:
-            try:
-                await self._connect()
-            except DatabaseException:
-                raise
-            except Exception as e:
-                raise DatabaseConnectionError(
-                    "Erro ao tentar reconectar ao DB!", details=str(e)
-                ) from e
+        print(self._lock, self.isconnected)
+        async with self._lock:
+            if not self.isconnected.status:
+                try:
+                    await self._connect()
+                except DatabaseException:
+                    raise
+                except Exception as e:
+                    raise DatabaseConnectionError(
+                        "Erro ao tentar reconectar ao DB!", details=str(e)
+                    ) from e
+            self._active_tasks += 1
+
+    # Modifique _disconnect:
+    async def _disconnect(self):
+        async with self._lock:
+            self._active_tasks -= 1
+            if self._active_tasks <= 0 and self.isconnected.status:
+                try:
+                    await self.database.disconnect()
+                    self.isconnected = ResponseModel(
+                        status=True, log="Desconexão do DB bem-sucedida!", error=False
+                    )
+                except Exception as e:
+                    self.isconnected = ResponseModel(
+                        status=False, log="Erro ao desconectar do DB!", error=True
+                    )
+                    raise DatabaseConnectionError(
+                        "Erro ao desconectar do DB!", details=str(e)
+                    ) from e
+            elif self._active_tasks < 0:
+                self._active_tasks = 0
 
     async def _execute_query(self, query: QueryModel, type_fetch=None):
         try:
@@ -160,7 +167,7 @@ class DatabaseRepository:
             await self._ensure_connected()
             query.delete()
             print(query.query)  # Debug: print the query being executed
-            
+
             result = await self._execute_query(query=query)
 
             await self._disconnect()

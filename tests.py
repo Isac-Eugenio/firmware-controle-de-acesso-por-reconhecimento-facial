@@ -12,7 +12,7 @@ from models.login_model import LoginModel
 from models.user_model import UserModel
 from repository.camera_repository import CameraRepository
 from repository.database_repository import DatabaseRepository, DATABASE_URL
-from services.api_service import ApiService
+from services.user_service import UserService
 from services.face_service import FaceService
 from core.utils.api_utils import ApiUtils
 
@@ -21,15 +21,6 @@ def _encoding_teste(float_value: float) -> str:
     zeros_float_str = ",".join([str(float_value)] * 128)
     return zeros_float_str
 
-
-admin_user = {
-   "alias":"joao",
-   "email":"joao@example.com",
-   "nome":"João da Silva",
-   "permission_level": "discente",
-   "matricula": "2020202020202",
-
-}
 
 camera_rep = CameraRepository(Camera)
 db_rep = DatabaseRepository()
@@ -40,46 +31,47 @@ user_controller = UserController(face_service=face_service, database_repository=
 
 
 async def debug_async():
-    teste = {
-        "email": "root.debug@gmail.com",
-        "senha": "@Isac1998"
-    }
-    model = LoginModel.model_validate(teste)
-    api = ApiService(face_service, db_rep)
+    form = {"id": "00000001", "senha": "@Isac1998", "email": "root.debug@gmail.com"}
+    model = LoginModel.model_validate(form)
+    User = UserService(face_service, db_rep)
 
-    response = await api._login_user(model)
-    print(dict(response.data))
+    response = await User._verify_user_with_id(model)
+    # print(dict(response.data))
     print(response)
 
 
 async def debug_stream():
-    admin = UserModel()
-    admin.id = "20109807"
-
-    form = {
-        "email":"root.debug@gmail.com",
-        "senha":"@Isac1998"
+    # Preencha todos os campos relevantes de UserModel para um discente
+    form_user = {
+        "alias": "joao",
+        "email": "joao@example.com",
+        "nome": "João da Silva",
+        "matricula": "2020202020202",
+        "id": ApiUtils._generate_id(),
+        "cpf": "233.233.233-99"
     }
+    model_user = UserModel.model_validate(form_user)
+    # LoginModel apenas com os campos necessários (sem senha)
+    form_admin = {"id": "00000001", "email": "root.debug@gmail.com", "senha": "@Isac1998"}
+    model_admin = LoginModel.model_validate(form_admin)
 
-    model = LoginModel.model_validate(form)
-    async for resposta in user_controller.login(model):
-        res = resposta
-        print(res)
-
-        
+    # Testa o fluxo de registro
+    async for resposta in user_controller.register(model_user, model_admin):
+        print(resposta)
 
 
 def debug():
     teste = {
         "email": "jao@gmail.com",
-        "senha":"123456789",
-        "permission_level": "administrador"
+        "senha": "123456789",
+        "permission_level": "administrador",
     }
 
     login = LoginModel.model_validate(teste)
     print(login)
 
+
 if __name__ == "__main__":
 
     asyncio.run(debug_stream())
-    #debug()
+    # debug()

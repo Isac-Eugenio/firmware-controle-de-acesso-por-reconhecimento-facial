@@ -4,7 +4,7 @@ from models.login_model import LoginModel
 from models.response_model import ResponseModel
 from models.user_model import UserModel
 from repository.database_repository import DatabaseRepository
-from services.api_service import ApiService
+from services.user_service import UserService
 from services.face_service import FaceService
 
 
@@ -12,7 +12,7 @@ class UserController:
     def __init__(
         self, face_service: FaceService, database_repository: DatabaseRepository
     ):
-        self.api_service = ApiService(face_service, database_repository)
+        self.user_service = UserService(face_service, database_repository)
         self.face_service = face_service
 
     async def login(self, login_model: LoginModel):
@@ -20,7 +20,7 @@ class UserController:
 
             yield ResponseModel(status=False, error=False, log="Verificando Login")
 
-            task = await self.api_service._login_user(login_model)
+            task = await self.user_service._login_user(login_model)
 
             if task.error:
                 yield ResponseModel(
@@ -43,9 +43,22 @@ class UserController:
 
             return
 
-    async def register(self, user_model: UserModel):
+    async def register(self, user_model: UserModel, login_model: LoginModel):
         try:
             yield ResponseModel(status=False, error=False, log="Iniciando Registro")
+
+            yield ResponseModel(status=False, error=False, log="Verificando ID")
+
+            task = await self.user_service._verify_user_with_id(login_model)
+            if task.error:
+                yield  ResponseModel(status=True, error=True, log="Erro ao verificar ID", details=task.details)
+                return 
+            
+            if task.data is None or not task.data:
+                yield  ResponseModel(status=True, error=True, log="ID não Autorizado", details=task.details)
+                return 
+            
+            yield ResponseModel(status=False, error=False, log="ID Autorizado")
 
             yield ResponseModel(status=False, error=False, log="Coletando Rosto")
 
@@ -63,7 +76,7 @@ class UserController:
                 status=False, error=False, log="Adicionando novo usuario"
             )
 
-            task = await self.api_service._insert_user(user_model)
+            task = await self.user_service._insert_user(user_model)
 
             if task.error:
                 yield ResponseModel(
@@ -99,7 +112,7 @@ class UserController:
     async def load_data(self):
         try:
             yield ResponseModel(status=False, error=False, log="Carregando Tabela")
-            task = await self.api_service._load_users()
+            task = await self.user_service._load_users()
 
             if task.error:
                 yield ResponseModel(
@@ -132,7 +145,7 @@ class UserController:
             yield ResponseModel(status=False, error=False, log="Atualizando Usuario")
 
             yield ResponseModel(status=False, error=False, log="Atualizando Usuario")
-            task = await self.api_service._update_user(user_model, new_model)
+            task = await self.user_service._update_user(user_model, new_model)
 
             if task.error:
                 yield ResponseModel(

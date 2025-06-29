@@ -11,7 +11,7 @@ from models.user_model import UserModel
 import numpy as np
 
 
-class ApiService:
+class UserService:
     def __init__(
         self, face_service: FaceService, database_repository: DatabaseRepository
     ):
@@ -134,14 +134,12 @@ class ApiService:
     async def _insert_user(self, user_model: UserModel):
         try:
             model_dict = user_model.model_dump()
-
             query = QueryModel(
                 table=DatabaseTables.perfis,
                 values=model_dict,
             )
 
             result = await self.db_repository.insert(query)
-
             if result.error:
                 return ResponseModel(
                     log="Erro ao inserir usuário",
@@ -263,4 +261,31 @@ class ApiService:
                 log="Erro interno no Servidor",
                 data=None,
                 details=str(e),
+            )
+
+    async def _verify_user_with_id(self, login_model: LoginModel) -> ResponseModel:
+        try:
+            if not login_model.id:
+                return ResponseModel(
+                    status=False, error=True, log="ID ausente", data=None
+                )
+
+            task = await self._count_user(login_model)
+
+            if task.error:
+                return ResponseModel(
+                    status=False, error=True, log="Erro ao Analisar ID", data=task.data
+                )
+
+            total = dict(task.data).get("total", 0)
+            return ResponseModel(
+                status=True,
+                error=False,
+                log="Usuário verificado" if total > 0 else "Usuário não encontrado",
+                data=total > 0,
+            )
+
+        except Exception as e:
+            return ResponseModel(
+                status=False, error=True, log=f"Erro interno: {str(e)}", data=None
             )
