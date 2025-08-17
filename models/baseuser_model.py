@@ -1,113 +1,134 @@
-import hashlib
-from typing import Optional, Union, Literal, List, get_args
+from pydantic import BaseModel, Field
+from typing import Optional, Literal, Union, List
 import numpy as np
-from pydantic import BaseModel, computed_field, field_validator, model_validator
-from core.config.app_config import PerfisColumns
-from core.errors.model_exception import ModelValueError
-from core.utils.api_utils import ApiUtils
+from core.commands.result import Result, Success, Failure
 from models.face_model import FaceModel
-import re
+from core.utils.api_utils import ApiUtils
 
-PermissionLiteral = Literal["administrador", "discente", "docente"]
-ApiUtils = ApiUtils()
+PermissionLiteral = Literal["discente", "docente", "administrador"]
+generate_id = ApiUtils._generate_id()
+
 
 class BaseUserModel(BaseModel):
-    nome: str = ""
-    email: str = ""
-    matricula: Optional[str] = None
-    alias: str = ""
-    cpf: str = ""
-    id: str = ""
+    id: str = Field(generate_id, max_length=8)
+    nome: str = Field(..., max_length=100)
+    alias: str = Field(..., max_length=11)
+    cpf: str = Field(..., max_length=14)
+    email: str = Field(..., max_length=255)
+    matricula: Optional[str] = Field(None, max_length=255)
+    senha: Optional[str] = Field(None, max_length=64)
+    icon_path: Optional[str] = Field(None, max_length=255)
     permission_level: PermissionLiteral = "discente"
-    icon_path: Optional[str] = None
-    encodings: str = ""
-    senha: Optional[str] = None 
+    encodings: Optional[str] = None  # será preenchido pelo FaceModel
+
+    # Atributo auxiliar interno
     _face_model: FaceModel = FaceModel()
 
-    @model_validator(mode="before")
-    def process_senha(cls, values):
-        senha_raw = values.get("senha", "")
-        per_level = values.get("permission_level", "").lower()
-
-        # Se NÃO for administrador, ignora a senha (zera ou None)
-        if per_level != "administrador":
-            values["senha"] = None
-            return values
-
-        # Se for administrador, senha não pode estar vazia
-        if not senha_raw:
-            raise ModelValueError("Senha não pode estar vazia para administradores.")
-
-        # Se senha já for hash SHA-256 (64 hex chars)
-        if re.fullmatch(r"[0-9a-fA-F]{64}", senha_raw):
-            values["senha"] = senha_raw.lower()
-        else:
-            # Senha raw, precisa ter no mínimo 9 chars para hash
-            if len(senha_raw) < 9:
-                raise ModelValueError("Senha deve ter no mínimo 9 caracteres.")
-            values["senha"] = ApiUtils._hash_sha256(senha_raw)
-
-        return values
-
-    @field_validator("email")
-    def check_email(cls, v):
-        if v and "@" not in v:
-            raise ModelValueError("Email inválido")
-        return v
-
-    @model_validator(mode="before")
-    def check_permission_level(cls, values):
-        pl = values.get("permission_level", "discente")
-        if pl not in get_args(PermissionLiteral):
-            raise ModelValueError(f"permission_level inválido: {pl}")
-        values["permission_level"] = pl
-        return values
-
-    """  @classmethod
-    def model_validate(cls, data: dict):
-        return super().model_validate(data) """
-
-    def verificar_senha(self, senha: str | bytes) -> bool:
-        """
-        Verifica se a senha fornecida corresponde à armazenada.
-        Aceita apenas senhas já hasheadas (64 hex chars).
-        """
-        # Converte bytes para string
-        if isinstance(senha, bytes):
-            try:
-                senha = senha.decode("utf-8")
-            except UnicodeDecodeError:
-                return False
-
-        if not isinstance(senha, str):
-            return False
-
-        # Valida se é um hash SHA-256 válido (64 caracteres hexadecimais)
-        if len(senha) != 64:
-            return False
+    def set_encoding(
+        self, encoding: Union[str, np.ndarray, List[float]]
+    ) -> Result[np.ndarray, str]:
         try:
-            int(senha, 16)
-        except ValueError:
-            return False
+            # Converte string para np.ndarray
+            if isinstance(encoding, str):
+                enc_res = self._face_model._encoding_array(encoding)
+                if enc_res.is_failure:
+                    return enc_res
+                encoding = enc_res.value
 
-        # Compara com a senha armazenada
-        return senha.lower() == (self.senha or "").lower()
+            # Converte lista para np.ndarray
+            elif isinstance(encoding, list):
+                encoding = np.array(encoding, dtype=float)
 
-    def set_encoding(self, encoding: Union[str, np.ndarray, List[float]]) -> None:
-        if isinstance(encoding, str):
-            encoding = self._face_model._encoding_array(encoding)
+            # Verifica tipo
+            if not isinstance(encoding, np.ndarray):
+                return Failure("Encoding deve ser um np.ndarray, lista ou string")
 
-        if isinstance(encoding, list):
-            encoding = np.array(encoding, dtype=float)
+            if encoding.dtype.kind not in ("f", "i"):
+                return Failure("Encoding deve ser numérico (float ou int)")
 
-        if not isinstance(encoding, np.ndarray):
-            raise ModelValueError("Encoding deve ser um np.ndarray ou uma string.")
+            if encoding.size != 128:
+                return Failure("Encoding deve conter exatamente 128 valores")
 
-        if encoding.dtype.kind not in ("f", "i"):
-            raise ModelValueError("Encoding deve ser um array numérico (float ou int).")
+            # Atualiza FaceModel
+            self._face_model.encodings = encoding
 
-        if encoding.size != 128:
-            raise ModelValueError("Encoding deve conter exatamente 128 valores.")
+            # Gera string a partir do encoding
+            str_res = self._face_model._encoding_string(encoding)
+            if str_res.is_failure:
+                return str_res
 
-        self._face_model.encodings = encoding
-        self.encodings = self._face_model._encoding_string(encoding)
+            # Salva string no campo do modelo
+            self.encodings = str_res.value
+
+            return Success(
+                encoding,
+                log="Encoding atualizado com sucesso",
+                details=f"Tamanho: {encoding.size}",
+            )
+
+        except Exception as e:
+            return Failure(f"Erro ao definir encoding", details=str(e))
+
+    @classmethod
+    def from_map(cls, data: dict) -> Result["BaseUserModel", str]:
+        try:
+            # Cria a instância do modelo
+            user = cls(
+                id=data.get("id", ApiUtils._generate_id()),
+                nome=data.get("nome", ""),
+                alias=data.get("alias", ""),
+                cpf=data.get("cpf", ""),
+                email=data.get("email", ""),
+                matricula=data.get("matricula"),
+                senha=data.get("senha"),
+                icon_path=data.get("icon_path"),
+                permission_level=data.get("permission_level", "discente"),
+            )
+
+            # Se houver encoding no map, seta no FaceModel
+            encoding = data.get("encodings")
+            if encoding:
+                set_res = user.set_encoding(encoding)
+                if set_res.is_failure:
+                    return Failure(f"Erro ao processar encoding", details=str(e))
+
+            return Success(user, log="BaseUserModel criado a partir do map com sucesso")
+
+        except Exception as e:
+            return Failure(
+                f"Erro ao criar BaseUserModel a partir do map", details=str(e)
+            )
+
+    def to_map(self) -> Result[dict, str]:
+        try:
+            # Converte o encoding para string via FaceModel
+            encoding_str = None
+            if (
+                self._face_model.encodings is not None
+                and len(self._face_model.encodings) > 0
+            ):
+                enc_res = self._face_model._encoding_string(self._face_model.encodings)
+                if enc_res.is_failure:
+                    return enc_res
+                encoding_str = enc_res.value
+
+            # Cria o dict com todos os campos
+            data_map = {
+                "id": self.id,
+                "nome": self.nome,
+                "alias": self.alias,
+                "cpf": self.cpf,
+                "email": self.email,
+                "matricula": self.matricula,
+                "senha": self.senha,
+                "icon_path": self.icon_path,
+                "permission_level": self.permission_level,
+                "encodings": encoding_str,
+            }
+
+            return Success(
+                data_map, log="BaseUserModel convertido para map com sucesso"
+            )
+
+        except Exception as e:
+            return Failure(f"Erro ao converter BaseUserModel para map", details=str(e))

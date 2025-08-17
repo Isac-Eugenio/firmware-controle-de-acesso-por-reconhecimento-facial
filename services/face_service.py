@@ -1,75 +1,72 @@
-from face_recognition import face_encodings, face_locations, compare_faces
+from typing import Any
+from face_recognition import face_encodings, face_locations
 
+from core.commands.result import Failure, Result, Success
 from repository.camera_repository import CameraRepository
-from core.config.app_config import CameraConfig as Camera
-from core.errors.face_exceptions import *
-from core.errors.camera_exceptions import CameraException
 from models.face_model import FaceModel
 
 
 class FaceService:
-    def __init__(self, camera_repository: CameraRepository, face_model: FaceModel):
+    def __init__(self, camera_repository: CameraRepository):
         self.camera_repository = camera_repository
-        self.face_model = face_model
+        self._frame = camera_repository.get_frame()  # Result esperado aqui
+
+    def get_face_locations(self) -> Result[list[tuple[int, Any, Any, int]], str]:
+        """Detecta todas as localizações de rostos no frame atual."""
+        if self._frame.is_failure:
+            return Failure("Erro ao obter o frame da câmera", details=self._frame.value)
+
         try:
-            self._frame = camera_repository.get_frame()
-
-        except CameraException as e:
-            raise
-
-    def get_face_locations(self):
-        try:
-            location = face_locations(self._frame)
-            return location
-
-        except Exception as e:
-            raise FaceLocationError("Erro ao encontrar um rosto")
-
-    def get_face_encodings(self):
-        try:
-            locations = self.get_face_locations()
-
+            locations = face_locations(self._frame.value)
             if not locations:
-                raise FaceEncodingError("Nenhum rosto detectado")
-
-            encodings = face_encodings(self._frame, locations)
-            return encodings
-
-        except FaceEncodingError as e:
-            raise
-
+                return Failure("Nenhum rosto encontrado")
+            return Success(locations, log="Rostos encontrados com sucesso")
         except Exception as e:
-            raise FaceEncodingError("Erro ao gerar encoding do rosto") from e
+            return Failure("Erro inesperado ao detectar rostos", details=str(e))
 
-    def get_first_face_encoding(self, location: tuple = None):
+    def get_face_encodings(self) -> Result[list[Any], str]:
+        """Gera encodings para todos os rostos encontrados no frame atual."""
+        if self._frame.is_failure:
+            return Failure("Erro ao obter o frame da câmera", details=self._frame.value)
+
+        locations_result = self.get_face_locations()
+        if locations_result.is_failure:
+            return Failure("Erro ao encontrar rostos", details=locations_result.value)
+
         try:
-            if location is not None:
-                if not isinstance(location, tuple):
-                    raise FaceEncodingError("A localização fornecida não é uma tupla")
-
-                encodings = face_encodings(self._frame, [location])
-
-            else:
-                encodings = self.get_face_encodings()
-
+            encodings = face_encodings(self._frame.value, locations_result.value)
             if not encodings:
-                raise FaceEncodingError("Nenhum encoding encontrado para o rosto")
+                return Failure("Nenhum encoding gerado")
+            return Success(encodings, log="Encodings gerados com sucesso")
+        except Exception as e:
+            return Failure("Erro inesperado ao gerar encodings", details=str(e))
 
-            return encodings[0]
+    def get_first_face_encoding(self) -> Result[Any, str]:
+        """Retorna apenas o primeiro encoding encontrado no frame."""
+        encodings_result = self.get_face_encodings()
+        if encodings_result.is_failure:
+            return Failure("Erro ao obter encodings", details=encodings_result.value)
 
-        except FaceEncodingError:
-            raise
+        first_encoding = encodings_result.value[0]
+        return Success(first_encoding, log="Primeiro encoding obtido com sucesso")
 
-    def create_face_model(self):
+    def create_face_model(self) -> Result[FaceModel, str]:
+        """Cria e valida um FaceModel com a primeira face encontrada no frame."""
+        locations_result = self.get_face_locations()
+        if locations_result.is_failure:
+            return Failure("Erro ao obter localização do rosto", details=locations_result.value)
+
+        encodings_result = self.get_first_face_encoding()
+        if encodings_result.is_failure:
+            return Failure("Erro ao obter encoding do rosto", details=encodings_result.value)
+
         try:
-            locations = self.get_face_locations()
-            if not locations:
-                raise FaceLocationError("Nenhum rosto detectado")
-
-            self.face_model.location = locations[0]
-            self.face_model.encodings = self.get_first_face_encoding(
-                self.face_model.location
+            # Usa Pydantic para validar
+            face_model = FaceModel(
+                location=locations_result.value[0],
+                encodings=encodings_result.value,
+                frame=self._frame.value
             )
-
-        except (FaceEncodingError, FaceLocationError):
-            raise
+            return Success(face_model, log="FaceModel criado com sucesso")
+        except Exception as e:
+            return Failure("Erro ao validar FaceModel", details=str(e))

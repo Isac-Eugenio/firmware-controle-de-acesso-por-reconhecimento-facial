@@ -1,4 +1,3 @@
-from core.errors.camera_exceptions import CameraException
 from services.ping_service import PingService
 from core.config.app_config import CameraConfig
 from core.utils.api_utils import ApiUtils
@@ -17,14 +16,13 @@ class CameraModel:
 
         self.camera_id = ApiUtils()._generate_id()
         self.full_host = f"http://{self.host}:{self.port}/{self.resolution}.{self.format}"
-        self.status_online = False
+        self.status_online = self.status()
 
     def status(self) -> bool:
         """Verifica se a câmera está online usando Ping"""
-        try:
-            is_online = PingService(self.host).ping()
-            self.status_online = is_online
-            return is_online
-        except Exception as e:
-            self.status_online = False
-            raise CameraException(message=f"Erro ao verificar status da câmera: {str(e)}")
+        ping = PingService(self.host)
+
+        self.status_online = ping.ping()
+
+        return self.status_online
+    

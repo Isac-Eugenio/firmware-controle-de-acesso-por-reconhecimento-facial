@@ -58,8 +58,9 @@ log "Iniciando instalação de dependências do sistema..."
 
 run_spinner "sudo apt update"
 run_spinner "sudo apt upgrade -y"
-run_spinner "sudo apt install -y python3-venv"
-run_spinner "sudo apt install -y build-essential cmake python3-dev python3-pip libopenblas-dev libboost-all-dev libx11-dev libjpeg-dev libpng-dev"
+
+run_spinner "sudo apt install -y python3-venv build-essential cmake python3-dev python3-pip \
+libopenblas-dev libboost-all-dev libx11-dev libjpeg-dev libpng-dev libgl1-mesa-glx libglib2.0-0 libgtk-3-dev"
 
 log "Criando ambiente virtual..."
 run_spinner "python3 -m venv .venv"

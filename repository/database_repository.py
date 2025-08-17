@@ -1,239 +1,101 @@
 import asyncio
+from typing import List, Union
 from databases import Database as AsyncDatabase
+from numpy import record
 
-from core.errors.database_exception import *
+from core.commands.database_command import DatabaseCommand
+from core.commands.result import Result, Success, Failure
 from models.query_model import QueryModel
-from models.response_model import ResponseModel
 from core.config.app_config import DatabaseConfig as db
 
-DATABASE_URL = "mysql+aiomysql://{}:{}@{}:{}/{}".format(
-    db.user, db.password, db.host, db.port, db.name
-)
+DATABASE_URL = f"mysql+aiomysql://{db.user}:{db.password}@{db.host}:{db.port}/{db.name}"
 
 
 class DatabaseRepository:
     def __init__(self, database_url=None):
         self.database_url = database_url or DATABASE_URL
         self.database = AsyncDatabase(self.database_url)
-        self.isconnected = ResponseModel(
-            status=False, log="Banco ainda não conectado", error=False
+        self.isconnected: Result = Failure(
+            "Banco ainda não conectado", log="Conexão não inicializada"
         )
-        self.isquery = lambda x: False if x is None else True
+        self.command = DatabaseCommand(self.database)
 
-    async def _connect(self):
-        if not self.isconnected.status:
-            try:
-                await self.database.connect()
-                self.isconnected = ResponseModel(
-                    status=True, log="Conexão ao DB bem-sucedida!", error=False
-                )
-            except Exception as e:
-                self.isconnected = ResponseModel(
-                    status=False, log="Erro ao conectar ao DB!", error=True
-                )
-                raise DatabaseConnectionError(
-                    "Erro ao se conectar ao DB!", details=str(e)
-                ) from e
-            
-    async def _disconnect(self):
-        if self.isconnected.status:
-            try:
-                await self.database.disconnect()
-                self.isconnected = ResponseModel(
-                    status=True, log="Desconexão bem-sucessida", error=False
-                )
-
-            except Exception as e:
-                self.isconnected = ResponseModel(
-                    status=True, log="Erro ao Desconectar o DB", error=False
-                )
-
-                raise DatabaseConnectionError(
-                    "Erro ao desconectar do DB", details=str(e)
-                ) from e
+    async def select_one(
+        self, query: QueryModel
+    ) -> Result[Union[record, List[record], int], str]:
+        query.select()
+        result = await self.command.execute_query(query=query, type_fetch="one")
+        if result.is_success:
+            return Success(
+                result.value, log="Select One executado com sucesso", details=""
+            )
         else:
-            self.isconnected = ResponseModel(
-                status=True, log="DB já desconectado", error=False
+            return Failure(
+                result.value,
+                log="Erro ao executar Select One",
+                details=str(result.details),
             )
 
-    async def _execute_query(self, query: QueryModel, type_fetch=None):
-        try:
-            if type_fetch == "one":
-                return await self.database.fetch_one(
-                    query=query.query, values=query.values
-                )
-            elif type_fetch == "all":
-                return await self.database.fetch_all(
-                    query=query.query, values=query.values
-                )
-            else:
-                return await self.database.execute(
-                    query=query.query, values=query.values
-                )
-        except Exception as e:
-            raise DatabaseQueryError("Erro ao executar a query", details=str(e)) from e
-
-    async def select_one(self, query: QueryModel):
-        try:
-
-            query.select()
-
-            result = await self._execute_query(query=query, type_fetch="one")
-
-            return ResponseModel(
-                status=True, log="Query executada com sucesso", data=result, error=False
+    async def select(
+        self, query: QueryModel
+    ) -> Result[Union[record, List[record], int], str]:
+        query.select()
+        result = await self.command.execute_query(query=query, type_fetch="all")
+        if result.is_success:
+            return Success(
+                result.value, log="Select All executado com sucesso", details=""
+            )
+        else:
+            return Failure(
+                result.value,
+                log="Erro ao executar Select All",
+                details=str(result.details),
             )
 
-        except DatabaseException as e:
-
-            return ResponseModel(
-                status=True,
-                log="Erro ao se Comunicar ao DB",
-                details=e.details,
-                error=True,
+    async def insert(
+        self, query: QueryModel
+    ) -> Result[Union[record, List[record], int], str]:
+        query.insert()
+        result = await self.command.execute_query(query=query)
+        if result.is_success:
+            return Success(result.value, log="Insert executado com sucesso", details="")
+        else:
+            return Failure(
+                result.value, log="Erro ao executar Insert", details=str(result.details)
             )
 
-        except Exception as e:
-
-            raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
-
-    async def select(self, query: QueryModel):
-        try:
-
-            query.select()
-
-            result = await self._execute_query(query=query, type_fetch="all")
-
-            return ResponseModel(
-                status=True, log="Query executada com sucesso", data=result, error=False
+    async def delete(
+        self, query: QueryModel
+    ) -> Result[Union[record, List[record], int], str]:
+        query.delete()
+        result = await self.command.execute_query(query=query)
+        if result.is_success:
+            return Success(result.value, log="Delete executado com sucesso", details="")
+        else:
+            return Failure(
+                result.value, log="Erro ao executar Delete", details=str(result.details)
             )
 
-        except DatabaseException as e:
-
-            return ResponseModel(
-                status=True,
-                log="Erro ao se Comunicar ao DB",
-                details=e.details,
-                error=True,
+    async def update(
+        self, query: QueryModel, new_query: QueryModel
+    ) -> Result[Union[record, List[record], int], str]:
+        query.update(new_query)
+        result = await self.command.execute_query(query=query)
+        if result.is_success:
+            return Success(result.value, log="Update executado com sucesso", details="")
+        else:
+            return Failure(
+                result.value, log="Erro ao executar Update", details=str(result.details)
             )
 
-        except Exception as e:
-
-            raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
-
-    async def insert(self, query: QueryModel):
-        try:
-
-            query.insert()
-
-            result = await self._execute_query(query=query)
-
-            return ResponseModel(
-                status=True, error=False, log="Query executada com Sucesso", data=result
+    async def count(
+        self, query: QueryModel
+    ) -> Result[Union[record, List[record], int], str]:
+        query.count()
+        result = await self.command.execute_query(query=query, type_fetch="one")
+        if result.is_success:
+            return Success(result.value, log="Count executado com sucesso", details="")
+        else:
+            return Failure(
+                result.value, log="Erro ao executar Count", details=str(result.details)
             )
-
-        except DatabaseException as e:
-
-            return ResponseModel(
-                status=True, error=True, log="Erro ao Executar Query", details=str(e)
-            )
-
-        except Exception as e:
-
-            raise DatabaseQueryError("Erro ao executar query", details=str(e)) from e
-
-    async def delete(self, query: QueryModel):
-        try:
-
-            query.delete()
-
-            result = await self._execute_query(query=query)
-
-            return ResponseModel(
-                status=True,
-                log="Delete executado com sucesso",
-                data=result,
-                error=False,
-            )
-
-        except DatabaseException as e:
-
-            return ResponseModel(
-                status=True,
-                log="Erro ao executar DELETE",
-                details=e.details,
-                error=True,
-            )
-
-        except Exception as e:
-
-            raise DatabaseQueryError("Erro ao executar DELETE", details=str(e)) from e
-
-    async def update(self, query: QueryModel, new_query: QueryModel):
-        try:
-
-            query.update(new_query)
-
-            result = await self._execute_query(query=query)
-
-            match result:
-                case 1:
-                    return ResponseModel(
-                        status=True,
-                        log="Update executado com sucesso",
-                        data=result,
-                        error=False,
-                    )
-
-                case 0:
-                    return ResponseModel(
-                        status=True,
-                        log="Nenhum dado correspondente",
-                        data=result,
-                        error=False,
-                    )
-
-                case _:
-                    return ResponseModel(
-                        status=True,
-                        log="Mas de um dado Atualizado",
-                        data=result,
-                        error=False,
-                    )
-
-        except DatabaseException as e:
-
-            return ResponseModel(
-                status=True,
-                log="Erro ao executar UPDATE",
-                details=e.details,
-                error=True,
-            )
-
-        except Exception as e:
-
-            raise DatabaseQueryError("Erro ao executar UPDATE", details=str(e)) from e
-
-    async def count(self, query: QueryModel):
-        try:
-
-            query.count()
-
-            result = await self._execute_query(query=query, type_fetch="one")
-
-            return ResponseModel(
-                status=True,
-                log="Contagem executada com sucesso",
-                data=result,
-                error=False,
-            )
-
-        except DatabaseException as e:
-
-            return ResponseModel(
-                status=True, log="Erro ao executar COUNT", details=e.details, error=True
-            )
-
-        except Exception as e:
-
-            raise DatabaseQueryError("Erro ao executar COUNT", details=str(e)) from e
