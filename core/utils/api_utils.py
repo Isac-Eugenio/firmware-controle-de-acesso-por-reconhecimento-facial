@@ -43,3 +43,10 @@ class ApiUtils:
     @staticmethod
     def _null_or_empty_columns(d: dict) -> list[str]:
         return [k for k, v in d.items() if v in ("", None, [], {})]
+
+    @staticmethod
+    def generate_encodings(num: int) -> str:
+        if not (0 <= num <= 9):
+            raise ValueError("O número deve ser um inteiro entre 0 e 9")
+        value = f"0.{num}"
+        return ",".join([value] * 128)

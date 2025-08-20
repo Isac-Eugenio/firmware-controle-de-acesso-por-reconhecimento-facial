@@ -1,13 +1,16 @@
 import asyncio
+from controllers.api_controller import ApiController
 from core.commands.async_command import AsyncCommand
 from core.commands.result import Result, Running, Success, Failure
+from core.commands.stream_command import StreamCommand
 from core.config.app_config import CameraConfig
 from core.utils.api_utils import ApiUtils
-from models.baseuser_model import BaseUserModel
+from models.user_model import UserModel
 from models.camera_model import CameraModel
 from models.face_model import FaceModel
 from models.query_model import QueryModel
-from models.user_model import UserModel
+
+from repository.api_repository import ApiRepository
 from repository.camera_repository import CameraRepository
 from repository.database_repository import DatabaseRepository
 from services.face_service import FaceService
@@ -17,47 +20,40 @@ from services.ping_service import PingService
 cam_repository = CameraRepository(CameraConfig())
 face_service = FaceService(cam_repository)
 
+db_repository = DatabaseRepository()
+
+api_repository = ApiRepository(db_repository)
 
 async def debug_async():
-    query = QueryModel(table="usuarios")
-    db = DatabaseRepository()
+    user_admin_dict = {"id": "00000001"}
+    user_admin = UserModel(**user_admin_dict)
 
-    face_model = face_service.create_face_model()
+    controller = ApiController(api_repository, face_service)
 
-    if face_model.is_failure:
-        print(face_model.value)
+    user_discente_dict = {
+        "nome": "João Silva",
+        "alias": "joaos",
+        "cpf": "123.456.789-00",
+        "email": "joao.silva@email.com",
+        "matricula": "2025123456",
+        "senha": None,
+        "icon_path": None,
+        "encodings": None,
+    }
 
-    encoding = face_model.value._encoding_string(face_model.value.encodings)
+    user_discente = UserModel(**user_discente_dict)
 
-    user_model = UserModel(
-        id=ApiUtils._generate_id(),
-        nome="elias",
-        alias="eu",
-        cpf="030.000.000-00",
-        email="eu@gmail.com",
-        matricula=None,
-        senha=None,
-        icon_path=None,
-        permission_level="discente",
-    )
+    stream_command = StreamCommand(lambda: controller.register_user_db(user_discente, user_admin))
 
-    user_model.set_encoding(encoding.value)
-
-    query.values = user_model.to_map().value
-
-    res  = await db.insert(query)
     
-    print(res)
-    if encoding.is_failure:
-        print(encoding.value)
-    
+    async for result in stream_command.execute_stream():
+        print(result)
 
+    
 
 def debug():
-   
-    p = face_service.create_face_model()
-    print(p)
- 
-       
+    print(len(ApiUtils.generate_128_repeated_floats(2).split(",")))
+
+
 if __name__ == "__main__":
-   asyncio.run(debug_async())
+    asyncio.run(debug_async())
