@@ -9,11 +9,12 @@ class QueryModel:
     condition: Optional[str] = None
     values: Optional[Union[List[Any], dict]] = None
     query: Optional[str] = None
-
+    
     def select(self, values: dict = None):
         if values is not None:
             self.values = values
 
+        # Define colunas
         if self.columns is None:
             self.columns = "*"
         else:
@@ -23,9 +24,25 @@ class QueryModel:
                 raise Exception(f"`columns` inválido: {type(self.columns)}")
             self.columns = ", ".join(self.columns)
 
+        # Começa a montar query
         self.query = f"SELECT {self.columns} FROM {self.table}"
+
+        # Cria WHERE
+        where_parts = []
+
+        if self.values:
+            # Prioriza values, gera parâmetros bind
+            conditions = [f"{key} = :{key}" for key in self.values.keys()]
+            where_parts.extend(conditions)
+        
+        # Mantém condição antiga se existir
         if self.condition:
-            self.query += f" WHERE {self.condition}"
+            where_parts.append(self.condition)
+
+        # Adiciona WHERE à query se houver alguma parte
+        if where_parts:
+            self.query += " WHERE " + " AND ".join(where_parts)
+
 
     def insert(self):
         if not isinstance(self.values, dict):

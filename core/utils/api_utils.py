@@ -5,7 +5,6 @@ import hashlib
 import random
 from typing import AsyncGenerator, Awaitable, Callable, List, Tuple
 
-from models.response_model import ResponseModel
 from repository.database_repository import DatabaseRepository
 
 

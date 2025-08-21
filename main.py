@@ -1,49 +1,69 @@
-""" from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, requests, responses, websockets
-from services.login_service import LoginService
-from services.user_service import ApiService
 import json
 
+from controllers.api_controller import ApiController
+from core.config.app_config import CameraConfig
+from repository.api_repository import ApiRepository
+from repository.camera_repository import CameraRepository
+from repository.database_repository import DatabaseRepository
+from services.face_service import FaceService
+from models.response_model import Response
+
+camera_repository = CameraRepository(CameraConfig())
+
+db_repository = DatabaseRepository()
+
+face_service = FaceService(camera_repository)
+
+api_repository = ApiRepository(db_repository)
+
+api = ApiController(api_repository, face_service)
+
 app = FastAPI()
-api = ApiService()
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],   
-    allow_headers=["*"],  
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
 
 @app.post("/login")
 async def login(request: requests.Request):
-    try:
-        formulario = await request.json()
-        print(formulario)
+    formulario = await request.json()
 
-        service = LoginService(form=formulario)
-        result = await service.login()
-        print(result)
-        if result.get("auth", False): 
-            return responses.JSONResponse(
-                content={"message": "Login bem-sucedido", "data": result},
-                status_code=200
-            )
-        else:
-            return responses.JSONResponse(
-                content={"message": "Acesso Negado", "data": result},
-                status_code=200
-            )
-    
-    except Exception as e:
-        print(f"Erro ao processar o login: {str(e)}")
-        return responses.JSONResponse(
-            content={"message": "Erro interno do servidor", "error": str(e)},
-            status_code=500
+    result = await api.login(formulario)
+
+    if result.is_success:
+
+        data_dict = result.value.model_dump()
+
+        response = Response(
+            log="Login realizado com sucesso ...",
+            data=data_dict,
+            code=200,
         )
+        return response.json()
+
+    if result.is_failure:
+        if result.details is None:
+            response = Response(log="Acesso Negado ...", code=200)
+            return response.json()
+
+        response = Response(
+            log="Erro ao realizar login ..",
+            details=result.details,
+            error=result.value,
+            code=400,
+        )
+        return response.json()
 
 
-
+"""
 @app.post('/tabela_perfis')
 async def table_perfil(request: requests.Request):
     formulario = await request.json()

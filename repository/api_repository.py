@@ -3,6 +3,8 @@ from typing import List, Union
 from numpy import record
 from core.commands.result import Failure, Result, Success
 from core.config.app_config import DatabaseTables
+from models.login_model import LoginModel
+from models.perfil_model import PerfilModel
 from models.query_model import QueryModel
 from models.user_model import UserModel, PermissionEnum
 from repository.database_repository import DatabaseRepository
@@ -12,16 +14,21 @@ class ApiRepository:
     def __init__(self, db_repository: DatabaseRepository):
         self.db = db_repository
 
-    async def select_user_table(self) -> Result[Union[record, List[record], int], str]:
-
+    async def select_user_table(self) -> Result[List[PerfilModel], str]:
         query = QueryModel(table=DatabaseTables.perfis)
 
         result = await self.db.select(query)
 
         if result.is_failure:
-            return Failure("Erro ao coletada tabela de usuários", details=result.value)
+            return Failure("Erro ao coletar tabela de usuários", details=result.value)
 
-        return Success(result.value, log="tabela coletada de usuario com sucesso")
+        filtered_result = []
+        for record in result.value:
+            dict_t = dict(record)
+            perfil = PerfilModel(**dict_t)
+            filtered_result.append(perfil)
+
+        return Success(filtered_result, log="Tabela de usuários coletada com sucesso")
 
     async def insert_user_table(self, user_data: UserModel) -> Result[str, str]:
 
@@ -96,3 +103,17 @@ class ApiRepository:
             False,
             log="Usuario não é um administrador",
         )
+
+    async def find_user(self, user_data: Union[PerfilModel, UserModel, LoginModel]) -> Result[PerfilModel, str]:
+        user_data_dict = user_data.model_dump(exclude_none=True, exclude_unset=True)
+
+        query = QueryModel(table=DatabaseTables.perfis, values=user_data_dict)
+
+        result = await self.db.select_one(query)
+
+        if result.is_failure:
+            return Failure("Erro ao encontrar usuário", details=result.value)
+
+        if result.value is None:
+            return Failure("Usuário não encontrado", log=result.log)
+        return Success(_value=result.value, log="Usuário encontrado com sucesso")

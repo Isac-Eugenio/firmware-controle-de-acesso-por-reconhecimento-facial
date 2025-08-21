@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from typing import Generic, TypeVar, Callable, Union
 
 TSuccess = TypeVar("TSuccess")
@@ -88,6 +88,10 @@ class Result(ABC, Generic[TSuccess, TFailure]):
             return f"Running({self._value})"
         return "UnknownResult()"
 
+    def to_map(self) -> dict:
+        if is_dataclass(self):
+            return asdict(self)
+        return {"_value": getattr(self, "_value", None)}
 
 @dataclass(frozen=True)
 class Success(Result[TSuccess, TFailure]):

@@ -1,5 +1,7 @@
 from core.commands.result import *
 from core.utils.api_utils import ApiUtils
+from models.login_model import LoginModel
+from models.perfil_model import PerfilModel
 from models.user_model import UserModel
 from repository.api_repository import ApiRepository
 from services.face_service import FaceService
@@ -53,3 +55,21 @@ class ApiController:
             return
 
         yield Success("Usuario registrado com sucesso ...", details=db_result.value)
+
+    async def login(self, login_data: dict) -> Result[PerfilModel, str]:
+
+        login_data = LoginModel(**login_data)
+
+        result = await self.api_repository.find_user(login_data)
+
+        if result.is_failure:
+            if result.log is None:
+                return Failure("Erro ao Autorizar o login ...", details=result.value)
+
+            return Failure("Usuario não Autorizado...", log=result.log)
+
+        result_dict = dict(result.value)
+
+        teste = PerfilModel(**result_dict)
+
+        return Success(teste, log="Usuario Autorizado ...")

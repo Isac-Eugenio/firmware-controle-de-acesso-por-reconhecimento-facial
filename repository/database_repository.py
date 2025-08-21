@@ -27,12 +27,12 @@ class DatabaseRepository:
         result = await self.command.execute_query(query=query, type_fetch="one")
         if result.is_success:
             return Success(
-                result.value, log="Select One executado com sucesso", details=""
+                result.value, log="Select one executado com sucesso", details=""
             )
         else:
             return Failure(
                 result.value,
-                log="Erro ao executar Select One",
+                log="Erro ao executar Select one",
                 details=str(result.details),
             )
 
