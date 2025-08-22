@@ -4,6 +4,7 @@ import json
 
 from controllers.api_controller import ApiController
 from core.config.app_config import CameraConfig
+from models.login_model import LoginModel
 from repository.api_repository import ApiRepository
 from repository.camera_repository import CameraRepository
 from repository.database_repository import DatabaseRepository
@@ -51,42 +52,47 @@ async def login(request: requests.Request):
 
     if result.is_failure:
         if result.details is None:
-            response = Response(log="Acesso Negado ...", code=200)
+            response = Response(log="Acesso Negado ...", code=401)
             return response.json()
 
         response = Response(
             log="Erro ao realizar login ..",
             details=result.details,
             error=result.value,
-            code=400,
+            code=500,
         )
         return response.json()
 
 
-"""
-@app.post('/tabela_perfis')
+@app.post("/perfis")
 async def table_perfil(request: requests.Request):
     formulario = await request.json()
-    
-    auth = await api._verify_user(data=formulario)
-    result = dict(auth)
-    print(result)
-    
-    if result.get("auth", True):  # Verificando se a autenticação foi bem-sucedida
-        list_result = []
-        api_service = ApiService()
-        api_result = await api_service._get_table(columns=["nome", "alias", "email", "permission_level", "matricula"], table="usuarios")
 
-        for row in api_result['result']:
-            list_result.append(dict(row))   
-    return {"error": None, "tabela": []}
+    model = LoginModel(**formulario)
 
-    return responses.JSONResponse(
-        content={"error": "Erro ao ler as tabelas de perfis", "tabela": []},
-        status_code=400  # Código de status adequado para falha na leitura da tabela
-    )
+    auth = await api.isAdmin(model)
+
+    print(auth)
+
+    if auth.value:
+        result = await api.get_user_table()
+
+        if result.is_failure:
+            response = Response(code=500, log=result.value, details=result.details)
+            return response.json()
+
+        response = Response(code=200, data=result.value, log=result.log)
+        return response.json()
+
+    if auth.is_failure:
+        response = Response(code=500, log=auth.value, details=auth.details)
+        return response.json()
+
+    response = Response(code=401, log="Acesso Negado ...", details=auth.log)
+    return response.json()
 
 
+"""
 @app.post('/auth_entrada')
 async def verificar_entrada(request: requests.Request):
     async def event_generator():

@@ -56,6 +56,13 @@ class ApiController:
 
         yield Success("Usuario registrado com sucesso ...", details=db_result.value)
 
+    async def get_user_table(self) -> Result[list[PerfilModel], str]:
+        result = await self.api_repository.select_user_table()
+        if result.is_failure:
+            return Failure("Erro ao coletar tabela de usuarios ...", details=result.value)
+
+        return Success(result.value, log=result.log)
+
     async def login(self, login_data: dict) -> Result[PerfilModel, str]:
 
         login_data = LoginModel(**login_data)
@@ -73,3 +80,15 @@ class ApiController:
         teste = PerfilModel(**result_dict)
 
         return Success(teste, log="Usuario Autorizado ...")
+
+    async def isAdmin(self, admin_data: LoginModel) -> Result[bool, str]:
+
+        result = await self.api_repository.user_is_admin(admin_data)
+
+        if result.is_failure:
+            return Failure("Erro ao verificar se o usuario é admin ...", details=result.value)
+
+        if result.value:
+            return Success(result.value, log="Usuario autorizado ...")
+        
+        return Failure(result.value, log="Usuario não autorizado ...")
