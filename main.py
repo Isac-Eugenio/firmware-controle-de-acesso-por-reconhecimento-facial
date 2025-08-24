@@ -1,10 +1,11 @@
-
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi import FastAPI
 
 import asyncio
 import json
+
+from fastapi.responses import StreamingResponse
 
 from controllers.api_controller import ApiController
 from core.commands.stream_command import StreamCommand
@@ -42,9 +43,9 @@ app.add_middleware(
 
 @app.post("/login")
 async def login(request: Request):
-    formulario = await request.json()
+    form = await request.json()
 
-    result = await api.login(formulario)
+    result = await api.login(form)
 
     if result.is_success:
 
@@ -73,9 +74,9 @@ async def login(request: Request):
 
 @app.post("/perfis")
 async def table_perfil(request: Request):
-    formulario = await request.json()
+    form = await request.json()
 
-    model = LoginModel(**formulario)
+    model = LoginModel(**form)
 
     auth = await api.isAdmin(model)
 
@@ -99,24 +100,29 @@ async def table_perfil(request: Request):
     return response.json()
 
 
-async def json_stream(form):
-    for i in range(5):  # <-- for normal
-        data = {"evento": i, "mensagem": f"Mensagem numero {i} {form}"}
+async def json_stream(time: int):
+    for i in range(time):
+        data = {"evento": i, "mensagem": f"Mensagem numero {i}"}
         yield json.dumps(data)
         await asyncio.sleep(1)
 
 
-# --- Endpoint que envia via SSE ---
 @app.post("/register_user")
 async def register_user(request: Request):
 
     form = await request.json()
 
-    command = StreamCommand(lambda: json_stream(form))
+    user_data = form.get("user", {})
+    admin_access = form.get("admin", {})
 
-    res = StreamResponse(command)
+    user_model = UserModel(**user_data)
+    login_model = LoginModel(**admin_access)
 
-    return await res.response()
+    command = StreamCommand(lambda: api.register_user_db(user_model, login_model))
+
+    stream = StreamResponse(command)
+
+    return await stream.response()
 
 
 """

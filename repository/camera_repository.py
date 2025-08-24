@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 from numpy import dtype, floating, integer, ndarray
 from core.commands.command import Command
@@ -48,3 +49,9 @@ class CameraRepository(CameraModel):
     def get_frame(self) -> Result[cv2.Mat | ndarray[Any, dtype[integer[Any] | floating[Any]]], str]:
         result = self.command.execute(self._get_frame)
         return result
+
+    async def get_frame_async(
+        self,
+    ) -> Result[cv2.Mat | ndarray[Any, dtype[integer[Any] | floating[Any]]], str]:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.get_frame)

@@ -1,3 +1,4 @@
+from typing import Any, AsyncGenerator
 from core.commands.result import *
 from core.utils.api_utils import ApiUtils
 from models.login_model import LoginModel
@@ -12,7 +13,7 @@ class ApiController:
         self.api_repository = api_repository
         self.face_service = face_service
 
-    async def register_user_db(self, user_data: UserModel, admin_key_access: LoginModel):
+    async def register_user_db(self, user_data: UserModel, admin_key_access: LoginModel) -> AsyncGenerator[Result[Any, str], None]:
         yield Running("Iniciando registro ...")
 
         admin_key_access_dict = admin_key_access.model_dump(
@@ -35,12 +36,12 @@ class ApiController:
 
         yield Running("iniciando Coleta do rosto ...")
 
-        get_encoding = self.face_service.get_first_face_encoding()
+        get_encoding = await self.face_service.get_first_face_encoding_async()
 
         if get_encoding.is_failure:
             yield Failure("Erro ao coletar o rosto", details=get_encoding.value)
             return
-
+        
         face_encoding = get_encoding.value
 
         user_data.set_encoding(face_encoding)
