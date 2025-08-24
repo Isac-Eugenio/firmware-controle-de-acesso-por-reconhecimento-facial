@@ -8,6 +8,7 @@ import json
 from fastapi.responses import StreamingResponse
 
 from controllers.api_controller import ApiController
+from core.commands.async_command import AsyncCommand
 from core.commands.stream_command import StreamCommand
 from core.config.app_config import CameraConfig
 from models.login_model import LoginModel
@@ -125,70 +126,62 @@ async def register_user(request: Request):
     return await stream.response()
 
 
-"""
-@app.post('/auth_entrada')
-async def verificar_entrada(request: requests.Request):
-    async def event_generator():
-        try:
-            async for step in api._validate_user(
-                columns=["nome", "email", "alias"],
-                encoding_column="encodings",  
-                table="usuarios",
-                trust=60
-            ):
-                if not step["final"]:
-                    yield f"data: {step['message']}\n\n"
-                    
-                else:
-                    if "data" in step and step["data"]:
-                        yield json.dumps(step["data"])
-                    else:
-                        yield json.dumps(step["message"])
+@app.post("/find_user")
+async def find_user(request: Request):
+    form = await request.json()
 
-                
-        except Exception as e:
-            yield f"data: Erro ao processar: {str(e)}\n\n"
-    
-    return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
+    user_data = form.get("user", {})
 
-@app.post('/new_perfil')
-async def new_perfil(request: requests.Request):
-    req = await request.json()
-    
-    async def event_generator():
-            try:
-                async for step in api._insert_user(
-                    data=req,
-                    encoding_column="encodings",  
-                    table="usuarios"
-                ):
-                    if not step["final"]:
-                        yield f"data: {step['message']}\n\n"
-                        
-                    else:
-                        yield f"Resultado: {step['message']}\n\n"
+    admin_data = form.get("admin", {})
 
-                    
-            except Exception as e:
-                yield f"data: Erro ao processar: {str(e)}\n\n"
-    
-    return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
-# Area de testes via rede:
+    command = AsyncCommand(lambda: api.find_user(user_data, admin_data))
 
-@app.get("/debug")
-async def debug():
-    async def event_generator():
-        try:
-            async for step in api._validate_user(
-                columns=["nome", "email", "alias"],
-                encoding_column="encodings",  
-                table="usuarios",
-                trust=60
-            ):
-                yield f"data: {step['message']}\n\n"
-        except Exception as e:
-            yield f"data: Erro ao processar: {str(e)}\n\n"
+    result = await command.execute_async()
 
-    return responses.StreamingResponse(event_generator(), media_type="text/event-stream")
+    if result.is_failure:
+        response = Response(code=500, log=result.value, details=result.details)
+        return response.json()
 
-"""
+    response = Response(code=200, data=result.value, log=result.log)
+    return response.json()
+
+
+@app.post("/delete_user")
+async def delete_user(request: Request):
+    form = await request.json()
+
+    user_data = form.get("user", {})
+
+    admin_data = form.get("admin", {})
+
+    command = AsyncCommand(lambda: api.delete_user(user_data, admin_data))
+
+    result = await command.execute_async()
+
+    if result.is_failure:
+        response = Response(code=500, log=result.value, details=result.details)
+        return response.json()
+
+    response = Response(code=200, data=result.value, log=result.log)
+    return response.json()
+
+
+@app.post("/update_user")
+async def update_user(request: Request):
+    form = await request.json()
+
+    user_data = form.get("user", {})
+    admin_data = form.get("admin", {})
+    new_data = form.get("new_data", {})
+
+    command = AsyncCommand(lambda: api.update_user(user_data, new_data, admin_data))
+
+    result = await command.execute_async()
+
+    if result.is_failure:
+        response = Response(code=500, log=result.value, details=result.details)
+        return response.json()
+
+    response = Response(code=200, data=result.value, log=result.log)
+    return response.json()
+

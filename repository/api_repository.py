@@ -104,8 +104,13 @@ class ApiRepository:
             log="Usuario não é um administrador",
         )
 
-    async def find_user(self, user_data: Union[PerfilModel, UserModel, LoginModel]) -> Result[PerfilModel, str]:
+    async def find_user(
+        self, user_data: Union[PerfilModel, UserModel, LoginModel]
+    ) -> Result[PerfilModel, str]:
         user_data_dict = user_data.model_dump(exclude_none=True, exclude_unset=True)
+
+        if not user_data_dict:
+            return Failure("Erro ao ler dados do request")
 
         query = QueryModel(table=DatabaseTables.perfis, values=user_data_dict)
 

@@ -13,7 +13,9 @@ class ApiController:
         self.api_repository = api_repository
         self.face_service = face_service
 
-    async def register_user_db(self, user_data: UserModel, admin_key_access: LoginModel) -> AsyncGenerator[Result[Any, str], None]:
+    async def register_user_db(
+        self, user_data: UserModel, admin_key_access: LoginModel
+    ) -> AsyncGenerator[Result[Any, str], None]:
         yield Running("Iniciando registro ...")
 
         admin_key_access_dict = admin_key_access.model_dump(
@@ -41,7 +43,7 @@ class ApiController:
         if get_encoding.is_failure:
             yield Failure("Erro ao coletar o rosto", details=get_encoding.value)
             return
-        
+
         face_encoding = get_encoding.value
 
         user_data.set_encoding(face_encoding)
@@ -60,7 +62,9 @@ class ApiController:
     async def get_user_table(self) -> Result[list[PerfilModel], str]:
         result = await self.api_repository.select_user_table()
         if result.is_failure:
-            return Failure("Erro ao coletar tabela de usuarios ...", details=result.value)
+            return Failure(
+                "Erro ao coletar tabela de usuarios ...", details=result.value
+            )
 
         return Success(result.value, log=result.log)
 
@@ -87,9 +91,70 @@ class ApiController:
         result = await self.api_repository.user_is_admin(admin_data)
 
         if result.is_failure:
-            return Failure("Erro ao verificar se o usuario é admin ...", details=result.value)
+            return Failure(
+                "Erro ao verificar se o usuario é admin ...", details=result.value
+            )
 
         if result.value:
             return Success(result.value, log="Usuario autorizado ...")
-        
+
         return Failure(result.value, log="Usuario não autorizado ...")
+
+    async def find_user(
+        self, user_data: dict, admin_data: dict
+    ) -> Result[PerfilModel, str]:
+
+        user_data = UserModel(**user_data)
+
+        admin_data = LoginModel(**admin_data)
+
+        auth = await self.isAdmin(admin_data)
+
+        result = await self.api_repository.find_user(user_data)
+
+        if not auth.value:
+            return Failure("Usuario não autorizado", details=auth.value)
+
+        if result.is_failure:
+            return Failure("Erro ao encontrar usuario ...", details=result.value)
+
+        result_value_dict = dict(result.value)
+
+        result_perfil_model = PerfilModel(**result_value_dict)
+
+        return Success(result_perfil_model, log="Usuario encontrado com sucesso ...")
+
+    async def delete_user(self, user_data: dict, admin_data: dict) -> Result[None, str]:
+        user_data = UserModel(**user_data)
+        admin_data = LoginModel(**admin_data)
+
+        auth = await self.isAdmin(admin_data)
+
+        if not auth.value:
+            return Failure("Usuario não autorizado", details=auth.value)
+
+        result = await self.api_repository.delete_user_table(user_data)
+
+        if result.is_failure:
+            return Failure("Erro ao deletar usuario ...", details=result.value)
+
+        return Success(None, log="Usuario deletado com sucesso ...")
+
+    async def update_user(
+        self, user_data: dict, new_data: dict, admin_data: dict
+    ) -> Result[None, str]:
+        user_data = UserModel(**user_data)
+        admin_data = LoginModel(**admin_data)
+        new_data = UserModel(**new_data)
+
+        auth = await self.isAdmin(admin_data)
+
+        if not auth.value:
+            return Failure("Usuario não autorizado", details=auth.value)
+
+        result = await self.api_repository.update_user_table(user_data, new_data)
+
+        if result.is_failure:
+            return Failure("Erro ao atualizar usuario ...", details=result.value)
+
+        return Success(None, log="Usuario atualizado com sucesso ...")
