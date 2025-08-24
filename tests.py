@@ -70,4 +70,4 @@ def debug():
     print(len(ApiUtils.generate_128_repeated_floats(2).split(",")))
 
 if __name__ == "__main__":
-    asyncio.run(teste_async())
+    asyncio.run(debug_async())

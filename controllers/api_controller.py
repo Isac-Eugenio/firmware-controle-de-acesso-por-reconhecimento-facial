@@ -12,7 +12,7 @@ class ApiController:
         self.api_repository = api_repository
         self.face_service = face_service
 
-    async def register_user_db(self, user_data: UserModel, admin_key_access: UserModel):
+    async def register_user_db(self, user_data: UserModel, admin_key_access: LoginModel):
         yield Running("Iniciando registro ...")
 
         admin_key_access_dict = admin_key_access.model_dump(

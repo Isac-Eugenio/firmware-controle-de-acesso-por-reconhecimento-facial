@@ -1,10 +1,17 @@
+
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, requests, responses, websockets
+from fastapi.requests import Request
+from fastapi import FastAPI
+
+import asyncio
 import json
 
 from controllers.api_controller import ApiController
+from core.commands.stream_command import StreamCommand
 from core.config.app_config import CameraConfig
 from models.login_model import LoginModel
+from models.stream_response_model import StreamResponse
+from models.user_model import UserModel
 from repository.api_repository import ApiRepository
 from repository.camera_repository import CameraRepository
 from repository.database_repository import DatabaseRepository
@@ -34,7 +41,7 @@ app.add_middleware(
 
 
 @app.post("/login")
-async def login(request: requests.Request):
+async def login(request: Request):
     formulario = await request.json()
 
     result = await api.login(formulario)
@@ -65,7 +72,7 @@ async def login(request: requests.Request):
 
 
 @app.post("/perfis")
-async def table_perfil(request: requests.Request):
+async def table_perfil(request: Request):
     formulario = await request.json()
 
     model = LoginModel(**formulario)
@@ -90,6 +97,26 @@ async def table_perfil(request: requests.Request):
 
     response = Response(code=401, log="Acesso Negado ...", details=auth.log)
     return response.json()
+
+
+async def json_stream(form):
+    for i in range(5):  # <-- for normal
+        data = {"evento": i, "mensagem": f"Mensagem numero {i} {form}"}
+        yield json.dumps(data)
+        await asyncio.sleep(1)
+
+
+# --- Endpoint que envia via SSE ---
+@app.post("/register_user")
+async def register_user(request: Request):
+
+    form = await request.json()
+
+    command = StreamCommand(lambda: json_stream(form))
+
+    res = StreamResponse(command)
+
+    return await res.response()
 
 
 """
