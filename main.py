@@ -5,7 +5,7 @@ from fastapi import FastAPI
 import asyncio
 import json
 
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from controllers.api_controller import ApiController
 from core.commands.async_command import AsyncCommand
@@ -26,7 +26,7 @@ db_repository = DatabaseRepository()
 
 face_service = FaceService(camera_repository)
 
-api_repository = ApiRepository(db_repository)
+api_repository = ApiRepository(db_repository, face_service)
 
 api = ApiController(api_repository, face_service)
 
@@ -185,3 +185,14 @@ async def update_user(request: Request):
     response = Response(code=200, data=result.value, log=result.log)
     return response.json()
 
+@app.post("/open_door")
+async def open_door(request: Request):
+    form = await request.json()
+
+    device_data = form.get("device", {})
+
+    result = await api_repository.open_door(device_data)
+    response = Response(data=result.to_map())
+
+    return response.json()
+    

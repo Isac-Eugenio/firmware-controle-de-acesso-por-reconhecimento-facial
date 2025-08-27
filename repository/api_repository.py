@@ -1,13 +1,20 @@
-from typing import List, Union
+from typing import AsyncGenerator, List, Union
 
 from numpy import record
-from core.commands.result import Failure, Result, Success
+from core.commands.result import Failure, Result, Running, Success
 from core.config.app_config import DatabaseTables
+from core.utils.api_utils import ApiUtils
+from models.device_model import DeviceModel
+from models.face_model import FaceModel
 from models.login_model import LoginModel
 from models.perfil_model import PerfilModel
 from models.query_model import QueryModel
 from models.user_model import UserModel, PermissionEnum
 from repository.database_repository import DatabaseRepository
+from repository.face_repository import FaceRepository
+from services.face_service import FaceService
+
+import numpy as np
 
 
 class ApiRepository:
@@ -122,3 +129,50 @@ class ApiRepository:
         if result.value is None:
             return Failure("Usuário não encontrado", log=result.log)
         return Success(_value=result.value, log="Usuário encontrado com sucesso")
+
+    async def open_door(
+        self, device_data: DeviceModel, face_repository: FaceRepository
+    ) -> Result[any, str]:
+
+        device_data_dict = device_data.model_dump(exclude_none=True, exclude_unset=True)
+
+        if not device_data_dict:
+            return Failure("Erro ao ler dados do dispositivo")
+
+        query = QueryModel(table=DatabaseTables.dispositivos, values=device_data_dict)
+        result = await self.db.select(query)
+
+        if result.is_failure:
+            return Failure("Erro ao buscar dispositivo", details=result.value)
+
+        res = result.value
+        devices: list[DeviceModel] = []
+
+        for i in res:
+            devices.append(DeviceModel(**dict(i)))
+
+        columns = PerfilModel.model_fields.keys()
+        query = QueryModel(table=DatabaseTables.perfis, columns=list(columns))
+        result = await self.db.select(query)
+
+        if result.is_failure:
+            return Failure("Erro ao encontrar perfis", details=result.value)
+
+        profiles: list[PerfilModel] = []
+
+        for i in result.value:
+            perfil = PerfilModel(**dict(i))
+            res = face_repository.face_model._encoding_array(perfil.encodings)
+            perfil.encodings = res.value if res.is_success else perfil.encodings
+
+            profiles.append(perfil)
+
+        face_to_compare = await face_repository.face_service.get_first_face_encoding_async()
+
+
+        p = await face_repository.match_face_to_profiles_async(profiles, face_to_compare.value)
+
+        return p
+
+
+      

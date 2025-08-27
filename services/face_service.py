@@ -1,5 +1,6 @@
 import asyncio
 from typing import Any
+import face_recognition as fr
 from face_recognition import face_encodings, face_locations
 
 from core.commands.result import Failure, Result, Success
@@ -11,7 +12,7 @@ class FaceService:
     def __init__(self, camera_repository: CameraRepository):
         self.camera_repository = camera_repository
         self._frame = camera_repository.get_frame()  # Result síncrono para debug / sync
-
+        self.fr = fr
     # ---------------------------
     # Sync versions
     # ---------------------------
