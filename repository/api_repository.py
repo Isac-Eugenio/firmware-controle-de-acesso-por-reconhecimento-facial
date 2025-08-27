@@ -137,42 +137,69 @@ class ApiRepository:
         device_data_dict = device_data.model_dump(exclude_none=True, exclude_unset=True)
 
         if not device_data_dict:
-            return Failure("Erro ao ler dados do dispositivo")
+            return Failure(
+                "Erro ao ler dados do dispositivo",
+                log="Erro Device",
+                details="Dados do dispositivo inválidos",
+            )
 
         query = QueryModel(table=DatabaseTables.dispositivos, values=device_data_dict)
         result = await self.db.select(query)
 
         if result.is_failure:
-            return Failure("Erro ao buscar dispositivo", details=result.value)
+            return Failure(
+                "Erro ao buscar dispositivo", log="Erro Device", details=result.value
+            )
 
         res = result.value
-        devices: list[DeviceModel] = []
-
-        for i in res:
-            devices.append(DeviceModel(**dict(i)))
+        devices: list[DeviceModel] = [DeviceModel(**dict(i)) for i in res]
 
         columns = PerfilModel.model_fields.keys()
         query = QueryModel(table=DatabaseTables.perfis, columns=list(columns))
         result = await self.db.select(query)
 
         if result.is_failure:
-            return Failure("Erro ao encontrar perfis", details=result.value)
+            return Failure(
+                "Erro ao encontrar perfis", log="Erro Perfis", details=result.value
+            )
 
         profiles: list[PerfilModel] = []
-
         for i in result.value:
             perfil = PerfilModel(**dict(i))
             res = face_repository.face_model._encoding_array(perfil.encodings)
-            perfil.encodings = res.value if res.is_success else perfil.encodings
 
+            if res.is_failure:
+                return Failure(
+                    "Erro ao processar encodings do perfil",
+                    log="Erro Encode",
+                    details=res.value,
+                )
+
+            perfil.encodings = res.value if res.is_success else perfil.encodings
             profiles.append(perfil)
 
-        face_to_compare = await face_repository.face_service.get_first_face_encoding_async()
+        face_to_compare = (
+            await face_repository.face_service.get_first_face_encoding_async()
+        )
+        if face_to_compare.is_failure:
+            return Failure(
+                "Erro ao obter rosto para comparação",
+                log="Erro Face",
+                details=face_to_compare.value,
+            )
 
+        match = await face_repository.match_face_to_profiles_async(
+            profiles, face_to_compare.value
+        )
+        if match.is_failure:
+            return Failure(
+                "Erro ao comparar rosto com perfis",
+                log="Erro Match",
+                details=match.value,
+            )
 
-        p = await face_repository.match_face_to_profiles_async(profiles, face_to_compare.value)
-
-        return p
-
-
-      
+        return Success(
+            match.value,
+            log="Porta Aberta",
+            details="Rosto reconhecido e comparado com sucesso",
+        )
