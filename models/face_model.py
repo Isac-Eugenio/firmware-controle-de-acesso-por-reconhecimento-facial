@@ -6,7 +6,7 @@ from core.commands.result import Result, Success, Failure
 
 
 class FaceModel(BaseModel):
-    encodings: Union[List[float], np.ndarray] = []
+    encodings: Union[List[float]] = []
     location: Tuple[int, int, int, int] = ()
 
     frame: cv2.Mat | np.ndarray[Any, np.dtype[np.integer[Any] | np.floating[Any]]] = None

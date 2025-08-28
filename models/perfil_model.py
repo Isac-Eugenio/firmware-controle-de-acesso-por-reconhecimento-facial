@@ -14,7 +14,6 @@ class PerfilModel(BaseModel):
     icon_path: Optional[str] = Field(None, max_length=255)
     permission_level: PermissionEnum = PermissionEnum.DISCENTE
     encodings: Union[List[float], Optional[str]] = Field(None)
-    
 
     @classmethod
     def from_user(cls, user: UserModel) -> "PerfilModel":
@@ -46,7 +45,7 @@ class PerfilModel(BaseModel):
 
             # Verifica tipo
             if not isinstance(encoding, np.ndarray):
-                return Failure("Encoding deve ser um np.ndarray, lista ou string")
+                return Failure("Encoding deve ser np.ndarray, lista ou string")
 
             if encoding.dtype.kind not in ("f", "i"):
                 return Failure("Encoding deve ser numérico (float ou int)")
@@ -54,22 +53,17 @@ class PerfilModel(BaseModel):
             if encoding.size != 128:
                 return Failure("Encoding deve conter exatamente 128 valores")
 
-            # Atualiza FaceModel
+            # Atualiza FaceModel para cálculos
             self._face_model.encodings = encoding
 
-            # Gera string a partir do encoding
-            str_res = self._face_model._encoding_string(encoding)
-            if str_res.is_failure:
-                return str_res
-
-            # Salva string no campo do modelo
-            self.encodings = str_res.value
+            # Salva como lista no campo do modelo (JSON-friendly)
+            self.encodings = encoding.tolist()
 
             return Success(
                 encoding,
-                log="Encoding atualizado com sucesso",
+                log="Encoding atualizado",
                 details=f"Tamanho: {encoding.size}",
             )
 
         except Exception as e:
-            return Failure(f"Erro ao definir encoding", details=str(e))
+            return Failure("Erro ao definir encoding", details=str(e))

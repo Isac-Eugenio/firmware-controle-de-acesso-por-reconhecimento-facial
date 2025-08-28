@@ -18,14 +18,16 @@ from repository.face_repository import FaceRepository
 from services.face_service import FaceService
 
 
+face_model = FaceModel()
+
 cam_repository = CameraRepository(CameraConfig())
 face_service = FaceService(cam_repository)
 
 db_repository = DatabaseRepository()
+face_repository = FaceRepository(face_service, face_model)
 
-api_repository = ApiRepository(db_repository)
+api_repository = ApiRepository(db_repository, face_repository)
 
-face_model = FaceModel()
 
 async def debug_async():
     user_admin_dict = {"email": "root.debug@gmail.com", "senha": "@Isac1998"}
@@ -61,7 +63,7 @@ async def teste_async():
 
     face_repository = FaceRepository(face_service, face_model)
 
-    command = AsyncCommand(lambda: api_repository.open_door(device, face_repository))
+    command = AsyncCommand(lambda: api_repository.open_door(device))
     result = await command.execute_async()
 
     print(result)

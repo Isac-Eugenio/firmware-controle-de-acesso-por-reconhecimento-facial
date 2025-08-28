@@ -11,12 +11,15 @@ from controllers.api_controller import ApiController
 from core.commands.async_command import AsyncCommand
 from core.commands.stream_command import StreamCommand
 from core.config.app_config import CameraConfig
+from models.device_model import DeviceModel
+from models.face_model import FaceModel
 from models.login_model import LoginModel
 from models.stream_response_model import StreamResponse
 from models.user_model import UserModel
 from repository.api_repository import ApiRepository
 from repository.camera_repository import CameraRepository
 from repository.database_repository import DatabaseRepository
+from repository.face_repository import FaceRepository
 from services.face_service import FaceService
 from models.response_model import Response
 
@@ -26,7 +29,11 @@ db_repository = DatabaseRepository()
 
 face_service = FaceService(camera_repository)
 
-api_repository = ApiRepository(db_repository, face_service)
+face_model = FaceModel()
+
+face_repository = FaceRepository(face_service, face_model)
+
+api_repository = ApiRepository(db_repository, face_repository)
 
 api = ApiController(api_repository, face_service)
 
@@ -185,14 +192,23 @@ async def update_user(request: Request):
     response = Response(code=200, data=result.value, log=result.log)
     return response.json()
 
+
 @app.post("/open_door")
 async def open_door(request: Request):
     form = await request.json()
 
     device_data = form.get("device", {})
 
-    result = await api_repository.open_door(device_data)
-    response = Response(data=result.to_map())
-
+    device_model = DeviceModel(**device_data)
+    print(device_model)
+    command = AsyncCommand(lambda: api_repository.open_door(device_model))
+    result = await command.execute_async()
+    
+    response = Response(
+        data=result.to_map(), code=200 if result.is_success else 500, log=result.log
+    )
     return response.json()
+
+
+
     

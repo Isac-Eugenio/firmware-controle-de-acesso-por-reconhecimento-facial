@@ -14,12 +14,13 @@ from repository.database_repository import DatabaseRepository
 from repository.face_repository import FaceRepository
 from services.face_service import FaceService
 
-import numpy as np
-
 
 class ApiRepository:
-    def __init__(self, db_repository: DatabaseRepository):
+    def __init__(
+        self, db_repository: DatabaseRepository, face_repository: FaceRepository
+    ):
         self.db = db_repository
+        self.face_repository = face_repository
 
     async def select_user_table(self) -> Result[List[PerfilModel], str]:
         query = QueryModel(table=DatabaseTables.perfis)
@@ -130,9 +131,7 @@ class ApiRepository:
             return Failure("Usuário não encontrado", log=result.log)
         return Success(_value=result.value, log="Usuário encontrado com sucesso")
 
-    async def open_door(
-        self, device_data: DeviceModel, face_repository: FaceRepository
-    ) -> Result[any, str]:
+    async def open_door(self, device_data: DeviceModel) -> Result[any, str]:
 
         device_data_dict = device_data.model_dump(exclude_none=True, exclude_unset=True)
 
@@ -157,7 +156,6 @@ class ApiRepository:
         columns = PerfilModel.model_fields.keys()
         query = QueryModel(table=DatabaseTables.perfis, columns=list(columns))
         result = await self.db.select(query)
-
         if result.is_failure:
             return Failure(
                 "Erro ao encontrar perfis", log="Erro Perfis", details=result.value
@@ -166,7 +164,7 @@ class ApiRepository:
         profiles: list[PerfilModel] = []
         for i in result.value:
             perfil = PerfilModel(**dict(i))
-            res = face_repository.face_model._encoding_array(perfil.encodings)
+            res = self.face_repository.face_model._encoding_array(perfil.encodings)
 
             if res.is_failure:
                 return Failure(
@@ -179,7 +177,7 @@ class ApiRepository:
             profiles.append(perfil)
 
         face_to_compare = (
-            await face_repository.face_service.get_first_face_encoding_async()
+            await self.face_repository.face_service.get_first_face_encoding_async()
         )
         if face_to_compare.is_failure:
             return Failure(
@@ -188,7 +186,7 @@ class ApiRepository:
                 details=face_to_compare.value,
             )
 
-        match = await face_repository.match_face_to_profiles_async(
+        match = await self.face_repository.match_face_to_profiles_async(
             profiles, face_to_compare.value
         )
         if match.is_failure:
@@ -198,8 +196,10 @@ class ApiRepository:
                 details=match.value,
             )
 
+        match.value.encodings = None
+
         return Success(
-            match.value,
+            match.value.model_dump(),
             log="Porta Aberta",
             details="Rosto reconhecido e comparado com sucesso",
         )
