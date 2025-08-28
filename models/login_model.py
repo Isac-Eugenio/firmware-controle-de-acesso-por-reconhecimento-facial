@@ -5,8 +5,8 @@ from models.user_model import PermissionEnum, UserModel
 
 
 class LoginModel(BaseModel):
-    email: str
-    senha: str
+    email: str = None
+    senha: str = None
     permission_level: PermissionEnum = PermissionEnum.ADMINISTRADOR
 
     @classmethod

@@ -99,7 +99,9 @@ class ApiRepository:
 
         if result.is_failure:
             return Failure(
-                "Erro ao verificar permissões do usuário", details=result.value
+                "Erro ao verificar permissões do usuário",
+                details=result.value,
+                error=True,
             )
 
         dict_count_result = dict(result.value)
@@ -107,10 +109,7 @@ class ApiRepository:
         if dict_count_result.get("total") > 0:
             return Success(True, log="Usuário é um administrador")
 
-        return Success(
-            False,
-            log="Usuario não é um administrador",
-        )
+        return Failure("usuario não é um administrador")
 
     async def find_user(
         self, user_data: Union[PerfilModel, UserModel, LoginModel]
@@ -118,14 +117,16 @@ class ApiRepository:
         user_data_dict = user_data.model_dump(exclude_none=True, exclude_unset=True)
 
         if not user_data_dict:
-            return Failure("Erro ao ler dados do request")
+            return Failure("Erro ao ler dados do request", error=True)
 
         query = QueryModel(table=DatabaseTables.perfis, values=user_data_dict)
 
         result = await self.db.select_one(query)
 
         if result.is_failure:
-            return Failure("Erro ao encontrar usuário", details=result.value)
+            return Failure(
+                "Erro ao encontrar usuário", details=result.value, error=True
+            )
 
         if result.value is None:
             return Failure("Usuário não encontrado", log=result.log)
@@ -139,7 +140,7 @@ class ApiRepository:
                 "Erro ao ler dados do dispositivo",
                 log="Erro Device",
                 details="Dados do dispositivo inválidos",
-                error=True
+                error=True,
             )
 
         query = QueryModel(table=DatabaseTables.dispositivos, values=device_data_dict)
@@ -150,7 +151,7 @@ class ApiRepository:
                 "Erro ao buscar dispositivo",
                 log="Erro Device",
                 details=result.value,
-                error=True
+                error=True,
             )
 
         res = result.value
@@ -164,7 +165,7 @@ class ApiRepository:
                 "Erro ao encontrar perfis",
                 log="Erro Perfis",
                 details=result.value,
-                error=True
+                error=True,
             )
 
         profiles: list[PerfilModel] = []
@@ -177,7 +178,7 @@ class ApiRepository:
                     "Erro ao processar encodings do perfil",
                     log="Erro Encode",
                     details=res.value,
-                    error=True
+                    error=True,
                 )
 
             perfil.encodings = res.value if res.is_success else perfil.encodings
@@ -191,7 +192,7 @@ class ApiRepository:
                 "Erro ao obter rosto para comparação",
                 log="Erro Face",
                 details=face_to_compare.value,
-                error=True
+                error=True,
             )
 
         match = await self.face_repository.match_face_to_profiles_async(
@@ -203,18 +204,15 @@ class ApiRepository:
                     "Erro ao comparar rosto com perfis",
                     log="Erro Match",
                     details=match.value,
-                    error=True
+                    error=True,
                 )
 
-                
             return Failure(
-                    "Rosto não reconhecido",
-                    log="Acesso Negado",
-                    details=match.value,
-                    error=False
-                )
+                "Rosto não reconhecido",
+                log="Sem Rosto",
+                details=match.value,
+            )
 
-        # Nenhum perfil correspondeu -> apenas acesso negado, não é "erro de execução"
         if not match.value:
             return Failure(
                 "Acesso negado: rosto não autorizado",
