@@ -108,13 +108,6 @@ async def table_perfil(request: Request):
     return response.json()
 
 
-async def json_stream(time: int):
-    for i in range(time):
-        data = {"evento": i, "mensagem": f"Mensagem numero {i}"}
-        yield json.dumps(data)
-        await asyncio.sleep(1)
-
-
 @app.post("/register_user")
 async def register_user(request: Request):
 
@@ -198,17 +191,25 @@ async def open_door(request: Request):
     form = await request.json()
 
     device_data = form.get("device", {})
-
     device_model = DeviceModel(**device_data)
-    print(device_model)
+
     command = AsyncCommand(lambda: api_repository.open_door(device_model))
     result = await command.execute_async()
-    
+
+    if result.is_failure:
+        status_code = 500 if result.error else 403
+
+        response = Response(
+            data=result.to_map(),
+            code=status_code,
+            log=result.log,
+        )
+        return response.json()
+
+    # caso de sucesso
     response = Response(
-        data=result.to_map(), code=200 if result.is_success else 500, log=result.log
+        data=result.to_map(),
+        code=200,
+        log=result.log,
     )
     return response.json()
-
-
-
-    

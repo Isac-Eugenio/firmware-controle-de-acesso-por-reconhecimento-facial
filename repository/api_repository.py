@@ -132,7 +132,6 @@ class ApiRepository:
         return Success(_value=result.value, log="Usuário encontrado com sucesso")
 
     async def open_door(self, device_data: DeviceModel) -> Result[any, str]:
-
         device_data_dict = device_data.model_dump(exclude_none=True, exclude_unset=True)
 
         if not device_data_dict:
@@ -140,6 +139,7 @@ class ApiRepository:
                 "Erro ao ler dados do dispositivo",
                 log="Erro Device",
                 details="Dados do dispositivo inválidos",
+                error=True
             )
 
         query = QueryModel(table=DatabaseTables.dispositivos, values=device_data_dict)
@@ -147,7 +147,10 @@ class ApiRepository:
 
         if result.is_failure:
             return Failure(
-                "Erro ao buscar dispositivo", log="Erro Device", details=result.value
+                "Erro ao buscar dispositivo",
+                log="Erro Device",
+                details=result.value,
+                error=True
             )
 
         res = result.value
@@ -158,7 +161,10 @@ class ApiRepository:
         result = await self.db.select(query)
         if result.is_failure:
             return Failure(
-                "Erro ao encontrar perfis", log="Erro Perfis", details=result.value
+                "Erro ao encontrar perfis",
+                log="Erro Perfis",
+                details=result.value,
+                error=True
             )
 
         profiles: list[PerfilModel] = []
@@ -171,6 +177,7 @@ class ApiRepository:
                     "Erro ao processar encodings do perfil",
                     log="Erro Encode",
                     details=res.value,
+                    error=True
                 )
 
             perfil.encodings = res.value if res.is_success else perfil.encodings
@@ -184,16 +191,35 @@ class ApiRepository:
                 "Erro ao obter rosto para comparação",
                 log="Erro Face",
                 details=face_to_compare.value,
+                error=True
             )
 
         match = await self.face_repository.match_face_to_profiles_async(
             profiles, face_to_compare.value
         )
         if match.is_failure:
+            if match.error:
+                return Failure(
+                    "Erro ao comparar rosto com perfis",
+                    log="Erro Match",
+                    details=match.value,
+                    error=True
+                )
+
+                
             return Failure(
-                "Erro ao comparar rosto com perfis",
-                log="Erro Match",
-                details=match.value,
+                    "Rosto não reconhecido",
+                    log="Acesso Negado",
+                    details=match.value,
+                    error=False
+                )
+
+        # Nenhum perfil correspondeu -> apenas acesso negado, não é "erro de execução"
+        if not match.value:
+            return Failure(
+                "Acesso negado: rosto não autorizado",
+                log="Acesso Negado",
+                details="Nenhum perfil corresponde ao rosto detectado",
             )
 
         match.value.encodings = None

@@ -105,7 +105,7 @@ class Failure(Result[TSuccess, TFailure]):
     _value: TFailure
     details: str = None
     log: str = None
-
+    error: bool = False
 
 @dataclass(frozen=True)
 class Running(Result[TSuccess, TFailure]):
