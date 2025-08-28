@@ -53,21 +53,13 @@ app.add_middleware(
 async def login(request: Request):
     form = await request.json()
 
-    result = await api.login(form)
+    admin_access = form.get("admin", {})
 
-    if result.is_success:
+    model = LoginModel(**admin_access)
 
-        data_dict = result.value.model_dump()
-
-        response = Response(
-            log="Login realizado com sucesso ...",
-            data=data_dict,
-            code=200,
-        )
-        return response.json()
-
+    result = await api.login(model)
     if result.is_failure:
-        if result.details is None:
+        if not result.error:
             response = Response(log="Acesso Negado ...", code=401)
             return response.json()
 
@@ -79,32 +71,38 @@ async def login(request: Request):
         )
         return response.json()
 
+    data_dict = result.value.model_dump()
+
+    response = Response(
+        log="Login realizado com sucesso ...",
+        data=data_dict,
+        code=200,
+    )
+    return response.json()
+
 
 @app.post("/perfis")
 async def table_perfil(request: Request):
     form = await request.json()
 
-    model = LoginModel(**form)
+    admin_access = form.get("admin", {})
 
-    auth = await api.isAdmin(model)
+    model = LoginModel(**admin_access)
+    print(model)
+    command = AsyncCommand(lambda: api.get_user_table(model))
+    result = await command.execute_async()
 
-    print(auth)
-
-    if auth.value:
-        result = await api.get_user_table()
-
-        if result.is_failure:
-            response = Response(code=500, log=result.value, details=result.details)
+    if result.is_failure:
+        if not result.error:
+            response = Response(
+                code=403, log="Acesso Negado ...", details=result.details
+            )
             return response.json()
 
-        response = Response(code=200, data=result.value, log=result.log)
+        response = Response(code=500, log=result.value, details=result.details)
         return response.json()
 
-    if auth.is_failure:
-        response = Response(code=500, log=auth.value, details=auth.details)
-        return response.json()
-
-    response = Response(code=401, log="Acesso Negado ...", details=auth.log)
+    response = Response(code=200, data=result.value, log=result.log)
     return response.json()
 
 
@@ -139,6 +137,12 @@ async def find_user(request: Request):
     result = await command.execute_async()
 
     if result.is_failure:
+        if not result.error:
+            response = Response(
+                code=403, log="Acesso Negado ...", details=result.details
+            )
+            return response.json()
+
         response = Response(code=500, log=result.value, details=result.details)
         return response.json()
 
@@ -159,6 +163,12 @@ async def delete_user(request: Request):
     result = await command.execute_async()
 
     if result.is_failure:
+        if not result.error:
+            response = Response(
+                code=403, log="Acesso Negado ...", details=result.details
+            )
+            return response.json()
+
         response = Response(code=500, log=result.value, details=result.details)
         return response.json()
 
@@ -179,6 +189,12 @@ async def update_user(request: Request):
     result = await command.execute_async()
 
     if result.is_failure:
+        if not result.error:
+            response = Response(
+                code=403, log="Acesso Negado ...", details=result.details
+            )
+            return response.json()
+
         response = Response(code=500, log=result.value, details=result.details)
         return response.json()
 
@@ -193,20 +209,23 @@ async def open_door(request: Request):
     device_data = form.get("device", {})
     device_model = DeviceModel(**device_data)
 
-    command = AsyncCommand(lambda: api_repository.open_door(device_model))
+    command = AsyncCommand(lambda: api.open_door(device_model))
     result = await command.execute_async()
 
     if result.is_failure:
-        status_code = 500 if result.error else 403
+        if not result.error:
+            response = Response(
+                code=403, log="Acesso Negado ...", details=result.details
+            )
+            return response.json()
 
         response = Response(
             data=result.to_map(),
-            code=status_code,
+            code=500,
             log=result.log,
         )
         return response.json()
 
-    # caso de sucesso
     response = Response(
         data=result.to_map(),
         code=200,
